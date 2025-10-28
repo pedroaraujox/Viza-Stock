@@ -1,12 +1,8 @@
 package br.com.jovvaz.control_system.model;
 
-import br.com.jovvaz.control_system.model.Produto;
-import br.com.jovvaz.control_system.model.TipoProduto;
 import jakarta.persistence.*;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "fichas_tecnicas")
@@ -15,48 +11,61 @@ public class FichaTecnica {
     @Id
     private String id;
 
-
+    // Relação: Uma Ficha Técnica é para UM Produto Acabado
     @OneToOne
-    @JoinColumn(name = "produto_acabado_id") // Cria a coluna de chave estrangeira.
+    @JoinColumn(name = "produto_acabado_id")
     private Produto produtoAcabado;
 
+    // --- ESTA É A NOVA PARTE ---
+    // Relação: Uma Ficha Técnica tem MUITOS Componentes
+    @OneToMany(mappedBy = "fichaTecnica", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<FichaTecnicaComponente> componentes = new ArrayList<>();
+    // --- FIM DA NOVA PARTE ---
 
-    @ElementCollection
-    @CollectionTable(name = "ficha_tecnica_componentes", joinColumns = @JoinColumn(name = "ficha_tecnica_id"))
-    @MapKeyJoinColumn(name = "produto_componente_id")
-    @Column(name = "quantidade")
-    private Map<Produto, Double> componentes = new HashMap<>();
-
-
+    // Construtores
     public FichaTecnica() {
     }
 
     public FichaTecnica(Produto produtoAcabado) {
-        if (produtoAcabado.getTipo() != TipoProduto.PRODUTO_ACABADO) {
-            throw new IllegalArgumentException("A Ficha Técnica só pode ser criada para um PRODUTO_ACABADO.");
-        }
-        this.id = UUID.randomUUID().toString(); // Geramos um ID único ao criar
+        this.id = "FT-" + produtoAcabado.getId(); // Cria um ID para a ficha
         this.produtoAcabado = produtoAcabado;
     }
 
+    // --- ESTE É O NOVO MÉTODO ---
+    // Método para adicionar um componente à lista
+    public void adicionarComponente(Produto materiaPrima, double quantidade) {
+        if (materiaPrima.getTipo() != TipoProduto.MATERIA_PRIMA) {
+            throw new IllegalArgumentException("Componente deve ser uma Matéria-Prima.");
+        }
+        FichaTecnicaComponente componente = new FichaTecnicaComponente(this, materiaPrima, quantidade);
+        this.componentes.add(componente);
+    }
+    // --- FIM DO NOVO MÉTODO ---
 
+
+    // Getters e Setters
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public Produto getProdutoAcabado() {
         return produtoAcabado;
     }
 
-    public Map<Produto, Double> getComponentes() {
+    public void setProdutoAcabado(Produto produtoAcabado) {
+        this.produtoAcabado = produtoAcabado;
+    }
+
+    // --- GETTER E SETTER NOVOS ---
+    public List<FichaTecnicaComponente> getComponentes() {
         return componentes;
     }
 
-
-    public void adicionarComponente(Produto materiaPrima, double quantidade) {
-        if (materiaPrima.getTipo() != TipoProduto.MATERIA_PRIMA) {
-            throw new IllegalArgumentException("Um componente de uma Ficha Técnica deve ser uma MATERIA_PRIMA.");
-        }
-        this.componentes.put(materiaPrima, quantidade);
+    public void setComponentes(List<FichaTecnicaComponente> componentes) {
+        this.componentes = componentes;
     }
 }
