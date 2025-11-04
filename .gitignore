@@ -22,3 +22,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Maven / Java build outputs
+/target/
+/backend/target/
+*.class
+
+# Development database (H2) — keep locally, don't version
+/data/
+*.mv.db
+*.trace.db
+
+# Environment files (frontend/backend local)
+.env*

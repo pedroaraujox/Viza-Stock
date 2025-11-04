@@ -16,6 +16,20 @@ logs
 *.log
 data/backups
 
+# Dev database shouldn't be in build context
+data
+
+# Environment files
+.env*
+
+# Maven wrapper (not needed in Docker build context)
+.mvn
+mvnw
+mvnw.cmd
+
+# Local scripts
+scripts
+
 # OS / Editor
 .DS_Store
 *.suo

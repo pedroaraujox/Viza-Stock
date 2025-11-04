@@ -1,5 +1,0 @@
-spring:
-  application:
-    name: control-system
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
