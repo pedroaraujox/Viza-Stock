@@ -114,6 +114,8 @@ export const useNotifications = () => {
   }
 
   return {
+    // Exponha a função base para atender usos existentes
+    addNotification,
     showSuccess,
     showError,
     showWarning,

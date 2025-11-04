@@ -18,7 +18,7 @@ public class FichaTecnica {
 
     // --- ESTA É A NOVA PARTE ---
     // Relação: Uma Ficha Técnica tem MUITOS Componentes
-    @OneToMany(mappedBy = "fichaTecnica", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "fichaTecnica", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<FichaTecnicaComponente> componentes = new ArrayList<>();
     // --- FIM DA NOVA PARTE ---
 

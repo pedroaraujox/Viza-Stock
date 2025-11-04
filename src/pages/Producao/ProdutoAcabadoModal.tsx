@@ -45,8 +45,11 @@ export const ProdutoAcabadoModal: React.FC<ProdutoAcabadoModalProps> = ({
   const watchedQuantidade = watch('quantidade')
 
   useEffect(() => {
-    fetchFichasTecnicas()
-  }, [fetchFichasTecnicas])
+    // Evita flood de requisições: só carrega se ainda não houver dados
+    if (!fichasTecnicas || fichasTecnicas.length === 0) {
+      fetchFichasTecnicas()
+    }
+  }, [fetchFichasTecnicas, fichasTecnicas])
 
   const fichaSelecionada = fichasTecnicas.find(f => f.id === watchedFichaTecnicaId)
 
@@ -84,7 +87,7 @@ export const ProdutoAcabadoModal: React.FC<ProdutoAcabadoModalProps> = ({
       })
       
       onSuccess()
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Erro ao registrar produção',

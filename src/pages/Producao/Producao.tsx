@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from 'react'
-import { 
-  Search, 
-  Plus, 
-  Play, 
-  CheckCircle, 
-  Clock, 
+import {
+  Search,
+  Plus,
+  CheckCircle,
+  Clock,
   AlertTriangle,
   Package,
   Factory,
-  Calendar,
-  Filter
+  Calendar
 } from 'lucide-react'
 import { useProducaoStore } from '../../stores/producaoStore'
 import { useProdutoStore } from '../../stores/produtoStore'
-import { useNotifications } from '../../stores/uiStore'
 import type { OrdemProducao } from '../../types'
 import { cn } from '../../lib/utils'
 import { OrdemProducaoModal } from './OrdemProducaoModal'
@@ -22,23 +19,29 @@ import { ProdutoAcabadoModal } from './ProdutoAcabadoModal'
 export const Producao: React.FC = () => {
   const { 
     ordensProducao, 
-    fichasTecnicas, 
-    loading, 
-    fetchFichasTecnicas,
-    executarOrdem
+    // loading global do store não deve bloquear a página inteira
+    // loading,
+    fetchFichasTecnicas
   } = useProducaoStore()
   const { produtos, fetchProdutos } = useProdutoStore()
-  const { addNotification } = useNotifications()
+  // Removido uso de notificações não utilizado para evitar avisos de lint
   
   const [searchTerm, setSearchTerm] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<'TODOS' | 'PENDENTE' | 'EXECUTADA' | 'CANCELADA'>('TODOS')
   const [ordemModalOpen, setOrdemModalOpen] = useState(false)
   const [produtoAcabadoModalOpen, setProdutoAcabadoModalOpen] = useState(false)
-  const [selectedOrdem, setSelectedOrdem] = useState<OrdemProducao | null>(null)
+  const [, setSelectedOrdem] = useState<OrdemProducao | null>(null)
+  // Novo estado local para controlar o carregamento inicial da página,
+  // evitando que requisições feitas pelo modal ocultem toda a tela.
+  const [loadingPagina, setLoadingPagina] = useState(true)
 
   useEffect(() => {
-    fetchFichasTecnicas()
-    fetchProdutos()
+    // Carregamento inicial: aguarda as duas chamadas e então libera a página
+    Promise.all([
+      fetchFichasTecnicas(),
+      fetchProdutos()
+    ]).finally(() => setLoadingPagina(false))
+    // Dependemos apenas das funções (estáveis no zustand)
   }, [fetchFichasTecnicas, fetchProdutos])
 
   // Filtrar ordens de produção
@@ -54,25 +57,7 @@ export const Producao: React.FC = () => {
   const ordensExecutadas = ordensProducao.filter(o => o.status === 'EXECUTADA').length
   const ordensCanceladas = ordensProducao.filter(o => o.status === 'CANCELADA').length
 
-  const handleExecutarOrdem = async (ordem: OrdemProducao) => {
-    if (window.confirm(`Confirma a execução da ordem de produção #${ordem.id}?`)) {
-      try {
-        // No backend atual, a execução de ordem requer os dados do produto e quantidade.
-        // Como não temos ordens pendentes listadas pela API, este botão ficará desativado.
-        addNotification({
-          type: 'success',
-          title: 'Ordem executada',
-          message: `A ordem de produção #${ordem.id} foi executada com sucesso.`
-        })
-      } catch (error) {
-        addNotification({
-          type: 'error',
-          title: 'Erro na execução',
-          message: 'Não foi possível executar a ordem de produção.'
-        })
-      }
-    }
-  }
+  // Removido handler não utilizado para evitar avisos de lint
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -100,7 +85,8 @@ export const Producao: React.FC = () => {
     }
   }
 
-  if (loading) {
+  // Mostra esqueleto apenas durante o carregamento inicial da página.
+  if (loadingPagina) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
@@ -223,7 +209,11 @@ export const Producao: React.FC = () => {
           {/* Filtro por Status */}
           <select
             value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value as any)}
+            onChange={(e) =>
+              setFiltroStatus(
+                e.target.value as 'TODOS' | 'PENDENTE' | 'EXECUTADA' | 'CANCELADA'
+              )
+            }
             className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="TODOS">Todos os status</option>

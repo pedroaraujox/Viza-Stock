@@ -21,6 +21,7 @@ const baseURL = rawBase.endsWith('/api')
 // Flag para controlar uso de mocks explicitamente via env
 // Por padrão, NÃO usa mocks (apenas quando VITE_USE_MOCKS === 'true')
 const USE_MOCKS = String(import.meta.env.VITE_USE_MOCKS).toLowerCase() === 'true'
+const IS_DEV = Boolean(import.meta.env.DEV)
 
 const api = axios.create({
   baseURL,
@@ -55,14 +56,17 @@ function getApiErrorMessage(error: unknown): string {
   // Quando for um AxiosError, tentamos extrair a mensagem do corpo
   if (axios.isAxiosError(error)) {
     const axErr = error as AxiosError
-    const data = axErr.response?.data as any
+    const data: unknown = axErr.response?.data
     // Backend atual retorna String no body para 400/404
     if (typeof data === 'string' && data.trim().length > 0) {
       return data
     }
     // Alguns backends retornam objeto com { message }
-    if (data && typeof data === 'object' && typeof data.message === 'string') {
-      return data.message
+    if (data && typeof data === 'object' && 'message' in data) {
+      const maybe = data as { message?: unknown }
+      if (typeof maybe.message === 'string') {
+        return maybe.message
+      }
     }
     // Caso não haja body utilizável, usa status e mensagem padrão
     const status = axErr.response?.status
@@ -73,6 +77,12 @@ function getApiErrorMessage(error: unknown): string {
   }
   // Fallback para erros genéricos
   return error instanceof Error ? error.message : 'Erro na API'
+}
+
+// Helper para decidir se devemos usar mocks automaticamente em dev quando a API falhar
+function shouldUseMocks(error: unknown): boolean {
+  // Apenas usa mocks quando explicitamente habilitado via VITE_USE_MOCKS=true
+  return USE_MOCKS
 }
 
 // Dados mock para desenvolvimento (alinhados ao modelo atual do backend)
@@ -103,6 +113,9 @@ const mockProdutos: Produto[] = [
   }
 ]
 
+// Mock de fichas técnicas (apenas quando USE_MOCKS === 'true')
+const mockFichasTecnicas: FichaTecnica[] = []
+
 // Serviços de Produtos
 export const produtosService = {
   // Listar todos os produtos
@@ -111,7 +124,7 @@ export const produtosService = {
       const response = await api.get('/produtos')
       return response.data
     } catch (error) {
-      if (USE_MOCKS) {
+      if (shouldUseMocks(error)) {
         console.warn('API não disponível, usando dados mock:', error)
         return mockProdutos
       }
@@ -125,7 +138,7 @@ export const produtosService = {
       const response = await api.get(`/produtos/${id}`)
       return response.data
     } catch (error) {
-      if (USE_MOCKS) {
+      if (shouldUseMocks(error)) {
         console.warn('API não disponível, buscando produto mock:', error)
         const produto = mockProdutos.find(p => p.id === id)
         if (!produto) {
@@ -143,7 +156,7 @@ export const produtosService = {
       const response = await api.post('/produtos', produto)
       return response.data
     } catch (error) {
-      if (USE_MOCKS) {
+      if (shouldUseMocks(error)) {
         console.warn('API não disponível, simulando criação:', error)
         const novoProduto: Produto = {
           id: produto.id || Date.now().toString(),
@@ -166,7 +179,7 @@ export const produtosService = {
       const response = await api.post(`/produtos/entrada`, entrada)
       return response.data
     } catch (error) {
-      if (USE_MOCKS) {
+      if (shouldUseMocks(error)) {
         console.warn('API não disponível, simulando entrada:', error)
         const produto = mockProdutos.find(p => p.id === entrada.produtoId)
         if (!produto) {
@@ -188,7 +201,7 @@ export const produtosService = {
       })
       return response.data
     } catch (error) {
-      if (USE_MOCKS) {
+      if (shouldUseMocks(error)) {
         console.warn('API não disponível, simulando baixa:', error)
         const produto = mockProdutos.find(p => p.id === produtoId)
         if (!produto) {
@@ -206,7 +219,7 @@ export const produtosService = {
     try {
       await api.delete(`/produtos/${id}`)
     } catch (error) {
-      if (USE_MOCKS) {
+      if (shouldUseMocks(error)) {
         console.warn('API não disponível, simulando exclusão:', error)
         const index = mockProdutos.findIndex(p => p.id === id)
         if (index > -1) {
@@ -224,13 +237,91 @@ export const produtosService = {
 export const producaoService = {
   // Criar produto acabado com ficha técnica
   criarProdutoAcabado: async (produto: ProdutoAcabadoRequestDTO): Promise<Produto> => {
-    const response = await api.post('/producao/produto-acabado', produto)
-    return response.data
+    try {
+      const response = await api.post('/producao/produto-acabado', produto)
+      return response.data
+    } catch (error) {
+      if (shouldUseMocks(error)) {
+        console.warn('API não disponível, simulando criação de produto acabado e ficha técnica:', error)
+
+        // Garantir que o produto acabado exista/atualize no mockProdutos
+        let produtoAcabado = mockProdutos.find(p => p.id === produto.id)
+        if (!produtoAcabado) {
+          produtoAcabado = {
+            id: produto.id,
+            nome: produto.nome,
+            desc: produto.desc || '',
+            tipo: 'PRODUTO_ACABADO',
+            unidadeMedida: produto.unidadeMedida,
+            quantidadeEmEstoque: 0
+          }
+          mockProdutos.push(produtoAcabado)
+        } else {
+          // Atualizar dados básicos
+          produtoAcabado.nome = produto.nome
+          produtoAcabado.desc = produto.desc || ''
+          produtoAcabado.unidadeMedida = produto.unidadeMedida
+        }
+
+        // Montar componentes da ficha técnica a partir dos IDs
+        const componentes = produto.componentes.map((c, idx) => {
+          const materia = mockProdutos.find(mp => mp.id === c.materiaPrimaId)
+          if (!materia) {
+            throw new Error(`Matéria-prima não encontrada: ${c.materiaPrimaId}`)
+          }
+          return {
+            id: idx + 1,
+            materiaPrima: materia,
+            quantidade: c.quantidade
+          }
+        })
+
+        // Atualizar ou criar a ficha técnica
+        const existenteIndex = mockFichasTecnicas.findIndex(ft => ft.produtoAcabado.id === produto.id)
+        const novaFicha: FichaTecnica = {
+          id: `FT-${produto.id}`,
+          produtoAcabado,
+          componentes
+        }
+
+        if (existenteIndex >= 0) {
+          mockFichasTecnicas[existenteIndex] = novaFicha
+        } else {
+          mockFichasTecnicas.push(novaFicha)
+        }
+
+        return produtoAcabado
+      }
+      // Propagar mensagem detalhada do backend
+      throw new Error(getApiErrorMessage(error))
+    }
   },
 
   // Executar ordem de produção
   executarOrdem: async (ordem: OrdemProducaoRequestDTO): Promise<void> => {
-    await api.post('/producao/executar', ordem)
+    try {
+      await api.post('/producao/executar', ordem)
+    } catch (error) {
+      if (shouldUseMocks(error)) {
+        console.warn('API não disponível, simulando execução de ordem de produção:', error)
+        // Simular consumo de matérias-primas e incremento do estoque do produto acabado
+        const ficha = mockFichasTecnicas.find(ft => ft.produtoAcabado.id === ordem.produtoAcabadoId)
+        const produtoAcabado = mockProdutos.find(p => p.id === ordem.produtoAcabadoId)
+        if (!ficha || !produtoAcabado) return
+
+        // Consome matérias-primas
+        ficha.componentes.forEach(c => {
+          const mp = mockProdutos.find(p => p.id === c.materiaPrima.id)
+          if (mp) {
+            mp.quantidadeEmEstoque = Math.max(0, (mp.quantidadeEmEstoque ?? 0) - c.quantidade * ordem.quantidadeAProduzir)
+          }
+        })
+        // Incrementa produto acabado
+        produtoAcabado.quantidadeEmEstoque = (produtoAcabado.quantidadeEmEstoque ?? 0) + ordem.quantidadeAProduzir
+        return
+      }
+      throw new Error(getApiErrorMessage(error))
+    }
   },
 
   // Verificar viabilidade de produção
@@ -241,21 +332,53 @@ export const producaoService = {
         quantidadeAProduzir: quantidade
       })
       return response.data.viavel || false
-    } catch {
+    } catch (error) {
+      if (shouldUseMocks(error)) {
+        console.warn('API não disponível, simulando verificação de viabilidade:', error)
+        const ficha = mockFichasTecnicas.find(ft => ft.produtoAcabado.id === produtoId)
+        if (!ficha) return false
+        // Checar se todas as matérias-primas têm estoque suficiente
+        return ficha.componentes.every(c => {
+          const mp = mockProdutos.find(p => p.id === c.materiaPrima.id)
+          const estoque = mp?.quantidadeEmEstoque ?? 0
+          const necessario = c.quantidade * quantidade
+          return estoque >= necessario
+        })
+      }
       return false
     }
   },
 
   // Listar fichas técnicas
   listarFichasTecnicas: async (): Promise<FichaTecnica[]> => {
-    const response = await api.get('/producao/fichas-tecnicas')
-    return response.data
+    try {
+      const response = await api.get('/producao/fichas-tecnicas')
+      return response.data
+    } catch (error) {
+      if (shouldUseMocks(error)) {
+        console.warn('API não disponível, usando fichas técnicas mock:', error)
+        return mockFichasTecnicas
+      }
+      throw new Error(getApiErrorMessage(error))
+    }
   },
 
   // Buscar ficha técnica por produto
   buscarFichaTecnica: async (produtoId: string): Promise<FichaTecnica> => {
-    const response = await api.get(`/producao/fichas-tecnicas/${produtoId}`)
-    return response.data
+    try {
+      const response = await api.get(`/producao/fichas-tecnicas/${produtoId}`)
+      return response.data
+    } catch (error) {
+      if (shouldUseMocks(error)) {
+        console.warn('API não disponível, buscando ficha técnica mock:', error)
+        const ficha = mockFichasTecnicas.find(ft => ft.produtoAcabado.id === produtoId)
+        if (!ficha) {
+          throw new Error('Ficha técnica não encontrada')
+        }
+        return ficha
+      }
+      throw new Error(getApiErrorMessage(error))
+    }
   }
 }
 

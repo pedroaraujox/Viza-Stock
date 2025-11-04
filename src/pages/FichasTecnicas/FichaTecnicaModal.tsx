@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { X, Plus, Trash2, Package, Calculator } from 'lucide-react'
+import { X, Plus, Trash2 } from 'lucide-react'
 import { useProdutoStore } from '../../stores/produtoStore'
 import { useProducaoStore } from '../../stores/producaoStore'
 import { useNotifications } from '../../stores/uiStore'
@@ -34,6 +34,7 @@ export const FichaTecnicaModal: React.FC<FichaTecnicaModalProps> = ({
   onSuccess
 }) => {
   const { produtos, fetchProdutos } = useProdutoStore()
+  const { criarProdutoAcabado } = useProducaoStore()
   const { addNotification } = useNotifications()
   const [loading, setLoading] = useState(false)
 
@@ -47,11 +48,13 @@ export const FichaTecnicaModal: React.FC<FichaTecnicaModalProps> = ({
   } = useForm<FichaTecnicaFormData>({
     resolver: zodResolver(fichaTecnicaSchema),
     defaultValues: {
-      produtoId: ficha?.produtoId || '',
-      descricao: ficha?.descricao || '',
-      quantidadeFinal: ficha?.quantidadeFinal || 1,
-      unidadeMedida: ficha?.unidadeMedida || '',
-      componentes: ficha?.componentes || [{ produtoId: '', quantidade: 1 }]
+      produtoId: ficha?.produtoAcabado?.id || '',
+      descricao: ficha?.produtoAcabado?.desc || '',
+      quantidadeFinal: 1,
+      unidadeMedida: ficha?.produtoAcabado?.unidadeMedida || '',
+      componentes: ficha?.componentes
+        ? ficha.componentes.map(c => ({ produtoId: c.materiaPrima.id, quantidade: c.quantidade }))
+        : [{ produtoId: '', quantidade: 1 }]
     }
   })
 
@@ -61,7 +64,6 @@ export const FichaTecnicaModal: React.FC<FichaTecnicaModalProps> = ({
   })
 
   const watchedProdutoId = watch('produtoId')
-  const watchedComponentes = watch('componentes')
 
   useEffect(() => {
     fetchProdutos()
@@ -80,40 +82,56 @@ export const FichaTecnicaModal: React.FC<FichaTecnicaModalProps> = ({
   // Produtos disponíveis para seleção (excluindo o produto final)
   const produtosDisponiveis = produtos.filter(p => p.id !== watchedProdutoId)
 
-  // Calcular custo total
-  const custoTotal = watchedComponentes.reduce((total, comp) => {
-    const produto = produtos.find(p => p.id === comp.produtoId)
-    return total + (produto ? produto.preco * comp.quantidade : 0)
-  }, 0)
+  // Removido cálculo de custo (campo 'preco' não existe em Produto)
 
   const onSubmit = async (data: FichaTecnicaFormData) => {
     setLoading(true)
     try {
-      // Aqui seria implementada a criação/edição via API
-      const produto = produtos.find(p => p.id === data.produtoId)
-      
-      if (ficha) {
-        // Edição
-        addNotification({
-          type: 'success',
-          title: 'Ficha técnica atualizada',
-          message: `A ficha técnica de "${produto?.nome}" foi atualizada com sucesso.`
-        })
-      } else {
-        // Criação
-        addNotification({
-          type: 'success',
-          title: 'Ficha técnica criada',
-          message: `A ficha técnica de "${produto?.nome}" foi criada com sucesso.`
-        })
+      const produtoFinal = produtos.find(p => p.id === data.produtoId)
+      if (!produtoFinal) {
+        throw new Error('Produto final não encontrado')
       }
-      
+
+      // Validar que todos os componentes foram selecionados
+      const componentesInvalidos = data.componentes.filter(c => !c.produtoId || c.produtoId.trim() === '')
+      if (componentesInvalidos.length > 0) {
+        throw new Error('Todos os componentes devem ter um produto selecionado')
+      }
+
+      // Monta o DTO esperado pelo backend para criar/atualizar a ficha técnica do produto acabado
+      const request = {
+        id: produtoFinal.id,
+        nome: produtoFinal.nome,
+        desc: data.descricao,
+        unidadeMedida: produtoFinal.unidadeMedida,
+        componentes: data.componentes.map(c => ({
+          materiaPrimaId: c.produtoId,
+          quantidade: c.quantidade
+        }))
+      }
+
+      console.log('Criando ficha técnica com request:', request)
+      await criarProdutoAcabado(request)
+
+      addNotification({
+        type: 'success',
+        title: ficha ? 'Ficha técnica atualizada' : 'Ficha técnica criada',
+        message: `A ficha técnica de "${produtoFinal.nome}" foi ${ficha ? 'atualizada' : 'criada'} com sucesso.`
+      })
+
       onSuccess()
     } catch (error) {
+      console.error('Erro ao criar ficha técnica:', error)
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : typeof error === 'string' 
+        ? error 
+        : 'Não foi possível salvar a ficha técnica.'
+      
       addNotification({
         type: 'error',
         title: 'Erro ao salvar',
-        message: 'Não foi possível salvar a ficha técnica.'
+        message: errorMessage
       })
     } finally {
       setLoading(false)
@@ -243,7 +261,7 @@ export const FichaTecnicaModal: React.FC<FichaTecnicaModalProps> = ({
                           <option value="">Selecione um produto</option>
                           {produtosDisponiveis.map((produto) => (
                             <option key={produto.id} value={produto.id}>
-                              {produto.nome} ({produto.unidadeMedida}) - Estoque: {produto.quantidade}
+                              {produto.nome} ({produto.unidadeMedida}) - Estoque: {produto.quantidadeEmEstoque}
                             </option>
                           ))}
                         </select>
@@ -295,21 +313,7 @@ export const FichaTecnicaModal: React.FC<FichaTecnicaModalProps> = ({
               )}
             </div>
 
-            {/* Resumo de Custos */}
-            {custoTotal > 0 && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Calculator className="w-5 h-5 text-blue-600" />
-                  <h4 className="font-medium text-blue-900 dark:text-blue-200">
-                    Resumo de Custos
-                  </h4>
-                </div>
-                <div className="text-sm text-blue-800 dark:text-blue-300">
-                  <p>Custo total dos componentes: R$ {custoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                  <p>Custo por unidade: R$ {(custoTotal / (watch('quantidadeFinal') || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                </div>
-              </div>
-            )}
+            {/* Resumo removido enquanto não há dados de custo disponíveis */}
           </div>
 
           {/* Footer */}

@@ -30,30 +30,73 @@ public class ProducaoService {
 
     @Transactional
     public FichaTecnica criarProdutoAcabadoComFichaTecnica(ProdutoAcabadoRequestDTO dto) {
-        if (produtoRepository.existsById(dto.getId())) {
-            throw new IllegalArgumentException("Erro: ID do produto '" + dto.getId() + "' já existe.");
-        }
-
-        Produto produtoAcabado = new Produto(
-                dto.getId(),
-                dto.getNome(),
-                dto.getDesc(),
-                TipoProduto.PRODUTO_ACABADO,
-                dto.getUnidadeMedida()
-        );
-        produtoRepository.save(produtoAcabado);
-
-        FichaTecnica ficha = new FichaTecnica(produtoAcabado);
-
+        // Validar componentes
         if (dto.getComponentes() == null || dto.getComponentes().isEmpty()) {
             throw new IllegalArgumentException("Produto Acabado deve ter pelo menos um componente.");
         }
 
+        // Se o produto já existir, usa o existente; senão, cria um novo
+        Produto produtoAcabado = produtoRepository.findById(dto.getId())
+                .map(produtoExistente -> {
+                    // Verificar se o produto existente é do tipo correto
+                    if (produtoExistente.getTipo() != TipoProduto.PRODUTO_ACABADO) {
+                        throw new IllegalArgumentException("Produto com ID " + dto.getId() + " não é um produto acabado.");
+                    }
+                    return produtoExistente;
+                })
+                .orElseGet(() -> {
+                    // Criar novo produto acabado
+                    Produto novo = new Produto(
+                            dto.getId(),
+                            dto.getNome(),
+                            dto.getDesc(),
+                            TipoProduto.PRODUTO_ACABADO,
+                            dto.getUnidadeMedida()
+                    );
+                    return produtoRepository.save(novo);
+                });
+
+        // Garantir que o produto está persistido e gerenciado pelo EntityManager
+        produtoAcabado = produtoRepository.save(produtoAcabado);
+
+        // Buscar ficha técnica existente ou criar nova
+        Optional<FichaTecnica> fichaExistenteOpt = fichaTecnicaRepository.findByProdutoAcabadoId(produtoAcabado.getId());
+        FichaTecnica ficha;
+        
+        if (fichaExistenteOpt.isPresent()) {
+            ficha = fichaExistenteOpt.get();
+            // Limpar componentes antigos (orphanRemoval cuidará da remoção no banco)
+            ficha.getComponentes().clear();
+        } else {
+            // Criar nova ficha técnica
+            ficha = new FichaTecnica(produtoAcabado);
+            // Garantir que o ID está definido
+            if (ficha.getId() == null || ficha.getId().isEmpty()) {
+                ficha.setId("FT-" + produtoAcabado.getId());
+            }
+        }
+
+        // Adicionar novos componentes
         for (ComponenteDTO compDTO : dto.getComponentes()) {
+            if (compDTO.getMateriaPrimaId() == null || compDTO.getMateriaPrimaId().trim().isEmpty()) {
+                throw new IllegalArgumentException("ID da matéria-prima não pode ser nulo ou vazio.");
+            }
+            
             Produto materiaPrima = produtoRepository.findById(compDTO.getMateriaPrimaId())
                     .orElseThrow(() -> new EntityNotFoundException("Matéria-prima não encontrada com ID: " + compDTO.getMateriaPrimaId()));
+            
+            if (compDTO.getQuantidade() <= 0) {
+                throw new IllegalArgumentException("Quantidade do componente deve ser maior que zero.");
+            }
+            
             ficha.adicionarComponente(materiaPrima, compDTO.getQuantidade());
         }
+
+        // Garantir que o vínculo do produto acabado está correto
+        ficha.setProdutoAcabado(produtoAcabado);
+
+        // Salvar e retornar a ficha técnica
+        // O @Transactional garante que tudo será persistido ao final da transação
         return fichaTecnicaRepository.save(ficha);
     }
 

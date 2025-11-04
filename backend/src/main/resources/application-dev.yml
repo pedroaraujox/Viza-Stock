@@ -22,6 +22,10 @@ spring:
     enabled: false
     locations: classpath:db/migration
 
+app:
+  seed:
+    enabled: false
+
 logging:
   level:
     root: INFO

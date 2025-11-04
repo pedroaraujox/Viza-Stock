@@ -12,6 +12,7 @@ import br.com.jovvaz.control_system.model.FichaTecnica;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 
 @RestController
@@ -23,11 +24,20 @@ public class ProducaoController {
     @PostMapping("/produto-acabado")
     public ResponseEntity<?> criarProdutoAcabado(@RequestBody ProdutoAcabadoRequestDTO dto) {
         try {
+            System.out.println("Recebendo requisição para criar produto acabado: " + dto.getId());
             FichaTecnica novaFicha = producaoService.criarProdutoAcabadoComFichaTecnica(dto);
+            System.out.println("Ficha técnica criada com sucesso: " + novaFicha.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(novaFicha);
 
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | jakarta.persistence.EntityNotFoundException e) {
+            System.err.println("Erro ao criar produto acabado: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado ao criar produto acabado: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro interno: " + e.getMessage());
         }
     }
 

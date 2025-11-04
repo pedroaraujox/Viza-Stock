@@ -43,9 +43,14 @@ export const Produtos: React.FC = () => {
     fetchProdutos()
   }, [fetchProdutos])
 
+  // Atualiza o filtro de busca apenas quando o termo muda.
+  // Importante: não dependemos de `filtros` aqui para evitar loop infinito
+  // (cada atualização de `filtros` causava nova execução deste effect).
   useEffect(() => {
-    setFiltros({ ...filtros, busca: searchTerm })
-  }, [searchTerm, filtros, setFiltros])
+    if (filtros.busca !== searchTerm) {
+      setFiltros({ busca: searchTerm })
+    }
+  }, [searchTerm])
 
   // Removido handler de edição não suportada no backend atual
 

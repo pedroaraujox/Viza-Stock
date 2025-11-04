@@ -1,5 +1,6 @@
 package br.com.jovvaz.control_system.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -13,6 +14,7 @@ public class FichaTecnicaComponente {
     // Relação: Muitos componentes pertencem a UMA Ficha Técnica
     @ManyToOne
     @JoinColumn(name = "ficha_tecnica_id")
+    @JsonIgnore // Evita referência circular na serialização JSON
     private FichaTecnica fichaTecnica;
 
     // Relação: O componente é UM Produto (Matéria-Prima)

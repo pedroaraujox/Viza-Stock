@@ -45,8 +45,12 @@ export const OrdemProducaoModal: React.FC<OrdemProducaoModalProps> = ({
   const watchedQuantidade = watch('quantidade')
 
   useEffect(() => {
-    fetchFichasTecnicas()
-  }, [fetchFichasTecnicas])
+    // Evitar chamadas repetidas desnecessárias ao backend:
+    // só busca se ainda não houver dados carregados.
+    if (!fichasTecnicas || fichasTecnicas.length === 0) {
+      fetchFichasTecnicas()
+    }
+  }, [fetchFichasTecnicas, fichasTecnicas])
 
   const fichaSelecionada = fichasTecnicas.find(f => f.id === watchedFichaTecnicaId)
 
@@ -86,7 +90,7 @@ export const OrdemProducaoModal: React.FC<OrdemProducaoModalProps> = ({
       })
       
       onSuccess()
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Erro ao criar ordem',
