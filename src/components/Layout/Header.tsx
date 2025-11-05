@@ -10,6 +10,7 @@ import {
   Settings as SettingsIcon
 } from 'lucide-react'
 import { useUIStore, useNotifications } from '../../stores/uiStore'
+import { useAuthStore } from '../../stores/authStore'
 import { cn } from '../../lib/utils'
 
 export const Header: React.FC = () => {
@@ -25,9 +26,11 @@ export const Header: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = React.useState(false)
   const [showNotifications, setShowNotifications] = React.useState(false)
 
+  const { logout } = useAuthStore()
+  
   const handleLogout = () => {
+    logout()
     showInfo('Logout', 'Você foi desconectado do sistema')
-    // Aqui implementaria a lógica de logout
   }
 
   const unreadNotifications = notifications.filter(n => !n.read).length
