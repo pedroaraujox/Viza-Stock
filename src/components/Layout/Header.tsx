@@ -26,7 +26,7 @@ export const Header: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = React.useState(false)
   const [showNotifications, setShowNotifications] = React.useState(false)
 
-  const { logout } = useAuthStore()
+  const { logout, user } = useAuthStore()
   
   const handleLogout = () => {
     logout()
@@ -164,18 +164,23 @@ export const Header: React.FC = () => {
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  Administrador
+                  {user?.nome ?? 'Usuário'}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  admin@viza.com
+                  {user?.email ?? ''}
                 </p>
               </div>
             </button>
 
             {/* Dropdown do Usuário */}
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                 <div className="p-2">
+                  {user && (
+                    <div className="px-3 py-2 mb-2 text-xs text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                      Acesso: <span className="font-semibold">{user.systemRole}</span>
+                    </div>
+                  )}
                   <button className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
                     <SettingsIcon className="w-4 h-4" />
                     <span>Configurações</span>

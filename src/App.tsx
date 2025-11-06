@@ -10,6 +10,7 @@ import { Relatorios } from './pages/Relatorios'
 import { Configuracoes } from './pages/Configuracoes'
 import { Login } from './pages/Login'
 import { useAuthStore } from './stores/authStore'
+import { RequireSystemRoles } from './components/RequireSystemRoles'
 
 // Componente para proteger rotas
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -43,7 +44,14 @@ function App() {
           <Route path="fichas-tecnicas" element={<FichasTecnicas />} />
           <Route path="producao" element={<Producao />} />
           <Route path="relatorios" element={<Relatorios />} />
-          <Route path="configuracoes" element={<Configuracoes />} />
+          <Route 
+            path="configuracoes" 
+            element={
+              <RequireSystemRoles allowed={["ROOT", "ADMINISTRADOR"]}>
+                <Configuracoes />
+              </RequireSystemRoles>
+            } 
+          />
         </Route>
       </Routes>
     </Router>

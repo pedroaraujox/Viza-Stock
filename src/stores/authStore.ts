@@ -1,11 +1,16 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export type SystemRole = 'ROOT' | 'ADMINISTRADOR' | 'PADRAO'
+
 export interface User {
   id: string
   nome: string
   email: string
+  // Papel funcional já existente na aplicação (operador, gerente, administrador funcional)
   role: 'OPERADOR_ESTOQUE' | 'GERENTE_PRODUCAO' | 'ADMINISTRADOR'
+  // Nível de acesso do sistema (hierarquia: ROOT > ADMINISTRADOR > PADRÃO)
+  systemRole: SystemRole
 }
 
 interface AuthStore {
@@ -26,26 +31,40 @@ interface AuthStore {
 
 // Dados mockados para simulação de login
 const MOCK_USERS = [
+  // Usuário ROOT (desenvolvedores) – controle total
+  {
+    id: '0',
+    nome: 'Root (Desenvolvedor)',
+    email: 'root@viza.com',
+    senha: 'root123',
+    role: 'ADMINISTRADOR' as const, // papel funcional
+    systemRole: 'ROOT' as const
+  },
+  // Administrador do sistema – tudo, exceto criar ROOT/ADMINISTRADOR
+  {
+    id: '3',
+    nome: 'Administrador do Sistema',
+    email: 'admin@viza.com',
+    senha: 'admin123',
+    role: 'ADMINISTRADOR' as const,
+    systemRole: 'ADMINISTRADOR' as const
+  },
+  // Perfis padrão (operacional) – restrições a definir
   {
     id: '1',
     nome: 'Operador de Estoque',
     email: 'operador@viza.com',
     senha: 'operador123',
-    role: 'OPERADOR_ESTOQUE' as const
+    role: 'OPERADOR_ESTOQUE' as const,
+    systemRole: 'PADRAO' as const
   },
   {
     id: '2',
     nome: 'Gerente de Produção',
     email: 'gerente@viza.com',
     senha: 'gerente123',
-    role: 'GERENTE_PRODUCAO' as const
-  },
-  {
-    id: '3',
-    nome: 'Administrador',
-    email: 'admin@viza.com',
-    senha: 'admin123',
-    role: 'ADMINISTRADOR' as const
+    role: 'GERENTE_PRODUCAO' as const,
+    systemRole: 'PADRAO' as const
   }
 ]
 
@@ -88,7 +107,8 @@ export const useAuthStore = create<AuthStore>()(
               id: user.id,
               nome: user.nome,
               email: user.email,
-              role: user.role
+              role: user.role,
+              systemRole: user.systemRole
             },
             token,
             isAuthenticated: true,
@@ -142,8 +162,9 @@ export const useAuthStore = create<AuthStore>()(
 // Hook utilitário para verificar permissões
 export const usePermissions = () => {
   const { user } = useAuthStore()
-  
-  const canAccess = (allowedRoles: string[]) => {
+
+  // Verificação por papéis funcionais existentes
+  const canAccess = (allowedRoles: Array<User['role']>) => {
     if (!user) return false
     return allowedRoles.includes(user.role)
   }
@@ -152,11 +173,28 @@ export const usePermissions = () => {
   const isGerente = () => user?.role === 'GERENTE_PRODUCAO'
   const isOperador = () => user?.role === 'OPERADOR_ESTOQUE'
 
+  // Verificação por hierarquia de acesso do sistema
+  const canAccessSystem = (allowedSystemRoles: SystemRole[]) => {
+    if (!user) return false
+    return allowedSystemRoles.includes(user.systemRole)
+  }
+
+  const isRoot = () => user?.systemRole === 'ROOT'
+  const isSystemAdmin = () => user?.systemRole === 'ADMINISTRADOR'
+  const isPadrao = () => user?.systemRole === 'PADRAO'
+
   return {
+    // funcional
     canAccess,
     isAdmin,
     isGerente,
     isOperador,
-    userRole: user?.role
+    userRole: user?.role,
+    // sistema
+    canAccessSystem,
+    isRoot,
+    isSystemAdmin,
+    isPadrao,
+    userSystemRole: user?.systemRole
   }
 }

@@ -111,7 +111,7 @@ describe('Login Component', () => {
     const emailInput = screen.getByLabelText('Email') as HTMLInputElement
     const passwordInput = screen.getByLabelText('Senha') as HTMLInputElement
     // Clicar no botão de demo para preencher automaticamente
-    const demoAdminButton = screen.getByText('Administrador')
+    const demoAdminButton = screen.getByText(/Administrador/i)
     fireEvent.click(demoAdminButton)
 
     // Verificar se os campos foram preenchidos após clicar
@@ -126,7 +126,7 @@ describe('Login Component', () => {
       </BrowserRouter>
     )
 
-    expect(screen.getByText('Administrador')).toBeInTheDocument()
+    expect(screen.getByText(/Administrador/i)).toBeInTheDocument()
     expect(screen.getByText('Gerente de Produção')).toBeInTheDocument()
     expect(screen.getByText('Operador de Estoque')).toBeInTheDocument()
   })

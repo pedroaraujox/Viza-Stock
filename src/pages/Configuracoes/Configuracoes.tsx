@@ -14,12 +14,15 @@ import {
   Building,
   MapPin
 } from 'lucide-react'
+import { Users as UsersIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useUIStore } from '../../stores/uiStore'
 import { useNotifications } from '../../stores/uiStore'
 import { cn } from '../../lib/utils'
+import { useAuthStore } from '../../stores/authStore'
+import { GerenciarUsuarios } from './GerenciarUsuarios'
 
 const perfilSchema = z.object({
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -45,12 +48,14 @@ type SenhaForm = z.infer<typeof senhaSchema>
 export const Configuracoes: React.FC = () => {
   const { theme, setTheme } = useUIStore()
   const { addNotification } = useNotifications()
-  const [activeTab, setActiveTab] = useState<'perfil' | 'seguranca' | 'notificacoes' | 'sistema'>('perfil')
+  const [activeTab, setActiveTab] = useState<'perfil' | 'seguranca' | 'notificacoes' | 'sistema' | 'usuarios'>('perfil')
   const [showPasswords, setShowPasswords] = useState({
     atual: false,
     nova: false,
     confirmar: false
   })
+  const { user } = useAuthStore()
+  const canManageUsers = user?.systemRole === 'ROOT' || user?.systemRole === 'ADMINISTRADOR'
 
   const perfilForm = useForm<PerfilForm>({
     resolver: zodResolver(perfilSchema),
@@ -117,7 +122,8 @@ export const Configuracoes: React.FC = () => {
     { id: 'perfil', label: 'Perfil', icon: User },
     { id: 'seguranca', label: 'Segurança', icon: Shield },
     { id: 'notificacoes', label: 'Notificações', icon: Bell },
-    { id: 'sistema', label: 'Sistema', icon: Settings }
+    { id: 'sistema', label: 'Sistema', icon: Settings },
+    ...(canManageUsers ? [{ id: 'usuarios', label: 'Gerenciar Usuários', icon: UsersIcon }] : [])
   ]
 
   return (
@@ -587,6 +593,9 @@ export const Configuracoes: React.FC = () => {
                 </div>
               </div>
             </div>
+          )}
+          {activeTab === 'usuarios' && canManageUsers && (
+            <GerenciarUsuarios />
           )}
         </div>
       </div>
