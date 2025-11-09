@@ -15,6 +15,7 @@ import { useNotifications } from '../../stores/uiStore'
 import type { FichaTecnica } from '../../types'
 import { FichaTecnicaModal } from './FichaTecnicaModal'
 import { FichaTecnicaVisualizacao } from './FichaTecnicaVisualizacao'
+import { TemplatesModal } from './TemplatesModal'
 
 export const FichasTecnicas: React.FC = () => {
   const { 
@@ -29,6 +30,7 @@ export const FichasTecnicas: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false)
   const [visualizacaoOpen, setVisualizacaoOpen] = useState(false)
   const [editingFicha, setEditingFicha] = useState<FichaTecnica | null>(null)
+  const [templatesOpen, setTemplatesOpen] = useState(false)
 
   useEffect(() => {
     fetchFichasTecnicas()
@@ -107,13 +109,22 @@ export const FichasTecnicas: React.FC = () => {
           </p>
         </div>
         
-        <button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-4 sm:mt-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nova Ficha Técnica</span>
-        </button>
+        <div className="flex items-center space-x-2 mt-4 sm:mt-0">
+          <button
+            onClick={() => setModalOpen(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nova Ficha Técnica</span>
+          </button>
+          <button
+            onClick={() => setTemplatesOpen(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Templates</span>
+          </button>
+        </div>
       </div>
 
       {/* Estatísticas */}
@@ -193,13 +204,22 @@ export const FichasTecnicas: React.FC = () => {
             }
           </p>
           {!searchTerm && (
-            <button
-              onClick={() => setModalOpen(true)}
-              className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Criar Primeira Ficha</span>
-            </button>
+            <div className="flex items-center justify-center space-x-3">
+              <button
+                onClick={() => setModalOpen(true)}
+                className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Criar Primeira Ficha</span>
+              </button>
+              <button
+                onClick={() => setTemplatesOpen(true)}
+                className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Templates</span>
+              </button>
+            </div>
           )}
         </div>
       ) : (
@@ -299,6 +319,12 @@ export const FichasTecnicas: React.FC = () => {
         <FichaTecnicaVisualizacao
           ficha={selectedFicha}
           onClose={handleCloseVisualizacao}
+        />
+      )}
+
+      {templatesOpen && (
+        <TemplatesModal
+          onClose={() => setTemplatesOpen(false)}
         />
       )}
     </div>

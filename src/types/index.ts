@@ -22,7 +22,8 @@ export interface FichaTecnicaComponente {
 
 // DTOs para requisições
 export interface ProdutoRequestDTO {
-  id: string
+  // ID agora é opcional: quando não informado, o backend gera automaticamente um ID único
+  id?: string
   nome: string
   desc?: string
   tipo: 'MATERIA_PRIMA' | 'PRODUTO_ACABADO'
@@ -35,7 +36,7 @@ export interface ProdutoEntradaDTO {
 }
 
 export interface ProdutoAcabadoRequestDTO {
-  id: string
+  id?: string
   nome: string
   desc?: string
   unidadeMedida: string

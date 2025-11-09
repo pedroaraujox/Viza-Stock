@@ -35,26 +35,41 @@ public class ProducaoService {
             throw new IllegalArgumentException("Produto Acabado deve ter pelo menos um componente.");
         }
 
-        // Se o produto já existir, usa o existente; senão, cria um novo
-        Produto produtoAcabado = produtoRepository.findById(dto.getId())
-                .map(produtoExistente -> {
-                    // Verificar se o produto existente é do tipo correto
-                    if (produtoExistente.getTipo() != TipoProduto.PRODUTO_ACABADO) {
-                        throw new IllegalArgumentException("Produto com ID " + dto.getId() + " não é um produto acabado.");
-                    }
-                    return produtoExistente;
-                })
-                .orElseGet(() -> {
-                    // Criar novo produto acabado
-                    Produto novo = new Produto(
-                            dto.getId(),
-                            dto.getNome(),
-                            dto.getDesc(),
-                            TipoProduto.PRODUTO_ACABADO,
-                            dto.getUnidadeMedida()
-                    );
-                    return produtoRepository.save(novo);
-                });
+        Produto produtoAcabado;
+        String idInformado = dto.getId();
+        if (idInformado == null || idInformado.trim().isEmpty()) {
+            // Sem ID: delega para EstoqueService gerar ID numérico e criar o produto
+            br.com.jovvaz.control_system.dto.ProdutoRequestDTO criarDTO = new br.com.jovvaz.control_system.dto.ProdutoRequestDTO();
+            criarDTO.setId(null);
+            criarDTO.setNome(dto.getNome());
+            criarDTO.setDesc(dto.getDesc());
+            criarDTO.setTipo(TipoProduto.PRODUTO_ACABADO);
+            criarDTO.setUnidadeMedida(dto.getUnidadeMedida());
+            produtoAcabado = estoqueService.criarProduto(criarDTO);
+        } else {
+            // Com ID: validar que é numérico e usar existente ou criar com ID informado
+            String idTrim = idInformado.trim();
+            if (!idTrim.matches("\\d+")) {
+                throw new IllegalArgumentException("O ID do produto acabado deve ser numérico (apenas dígitos). Ex.: 01, 02, 10");
+            }
+            produtoAcabado = produtoRepository.findById(idTrim)
+                    .map(produtoExistente -> {
+                        if (produtoExistente.getTipo() != TipoProduto.PRODUTO_ACABADO) {
+                            throw new IllegalArgumentException("Produto com ID " + idTrim + " não é um produto acabado.");
+                        }
+                        return produtoExistente;
+                    })
+                    .orElseGet(() -> {
+                        Produto novo = new Produto(
+                                idTrim,
+                                dto.getNome(),
+                                dto.getDesc(),
+                                TipoProduto.PRODUTO_ACABADO,
+                                dto.getUnidadeMedida()
+                        );
+                        return produtoRepository.save(novo);
+                    });
+        }
 
         // Garantir que o produto está persistido e gerenciado pelo EntityManager
         produtoAcabado = produtoRepository.save(produtoAcabado);

@@ -73,22 +73,7 @@ export const ProdutoModal: React.FC<ProdutoModalProps> = ({
         return 'MATERIA_PRIMA'
       }
 
-      // Gera um ID compatível com o backend a partir do nome do produto
-      const gerarId = (nome: string) => {
-        return (nome || '')
-          .trim()
-          .toUpperCase()
-          // remove acentos
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          // substitui não-alfanum por underscore
-          .replace(/[^A-Z0-9]+/g, '_')
-          // remove underscores no início/fim
-          .replace(/^_+|_+$/g, '')
-      }
-
       const produtoData: ProdutoRequestDTO = {
-        id: gerarId(data.nome),
         nome: data.nome,
         desc: data.descricao || undefined,
         tipo: mapCategoriaParaTipo(data.categoria),
