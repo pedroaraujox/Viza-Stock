@@ -12,6 +12,7 @@ interface ProdutoStore {
   // Ações
   fetchProdutos: () => Promise<void>
   criarProduto: (produto: ProdutoRequestDTO) => Promise<void>
+  atualizarProduto: (id: string, produto: ProdutoRequestDTO) => Promise<void>
   darEntrada: (entrada: ProdutoEntradaDTO) => Promise<void>
   darBaixa: (produtoId: string, quantidade: number) => Promise<void>
   deletarProduto: (id: string) => Promise<void>
@@ -59,6 +60,24 @@ export const useProdutoStore = create<ProdutoStore>((set, get) => ({
       set({ 
         error: error instanceof Error ? error.message : 'Erro ao criar produto',
         loading: false 
+      })
+      throw error
+    }
+  },
+
+  // Atualizar produto
+  atualizarProduto: async (id: string, produto: ProdutoRequestDTO) => {
+    set({ loading: true, error: null })
+    try {
+      const produtoAtualizado = await produtosService.atualizar(id, produto)
+      set(state => ({
+        produtos: state.produtos.map(p => p.id === produtoAtualizado.id ? produtoAtualizado : p),
+        loading: false
+      }))
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Erro ao atualizar produto',
+        loading: false
       })
       throw error
     }

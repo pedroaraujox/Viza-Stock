@@ -15,7 +15,7 @@ import { useNotifications } from '../../stores/uiStore'
 import type { FichaTecnica } from '../../types'
 import { FichaTecnicaModal } from './FichaTecnicaModal'
 import { FichaTecnicaVisualizacao } from './FichaTecnicaVisualizacao'
-import { TemplatesModal } from './TemplatesModal'
+import { TemplatesModal, type TemplateFichaTecnica } from './TemplatesModal'
 
 export const FichasTecnicas: React.FC = () => {
   const { 
@@ -31,6 +31,7 @@ export const FichasTecnicas: React.FC = () => {
   const [visualizacaoOpen, setVisualizacaoOpen] = useState(false)
   const [editingFicha, setEditingFicha] = useState<FichaTecnica | null>(null)
   const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateFichaTecnica | null>(null)
 
   useEffect(() => {
     fetchFichasTecnicas()
@@ -74,6 +75,7 @@ export const FichasTecnicas: React.FC = () => {
   const handleCloseModal = () => {
     setModalOpen(false)
     setEditingFicha(null)
+    setSelectedTemplate(null)
   }
 
   const handleCloseVisualizacao = () => {
@@ -307,6 +309,7 @@ export const FichasTecnicas: React.FC = () => {
       {modalOpen && (
         <FichaTecnicaModal
           ficha={editingFicha}
+          initialTemplate={selectedTemplate ?? undefined}
           onClose={handleCloseModal}
           onSuccess={() => {
             handleCloseModal()
@@ -325,6 +328,14 @@ export const FichasTecnicas: React.FC = () => {
       {templatesOpen && (
         <TemplatesModal
           onClose={() => setTemplatesOpen(false)}
+          onUseTemplate={(tpl) => {
+            // Fecha o modal de templates e abre o de criação com dados do template
+            setTemplatesOpen(false)
+            setEditingFicha(null)
+            setSelectedFicha(null)
+            setSelectedTemplate(tpl)
+            setModalOpen(true)
+          }}
         />
       )}
     </div>

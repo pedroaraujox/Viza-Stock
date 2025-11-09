@@ -35,7 +35,7 @@ export const ProdutoModal: React.FC<ProdutoModalProps> = ({
   onClose,
   isEditing
 }) => {
-  const { criarProduto, loading } = useProdutoStore()
+  const { criarProduto, atualizarProduto, loading } = useProdutoStore()
   const { showSuccess, showError } = useNotifications()
 
   const {
@@ -81,16 +81,12 @@ export const ProdutoModal: React.FC<ProdutoModalProps> = ({
       }
 
       if (isEditing && produto) {
-        // Backend atual não possui endpoint de atualização de produto
-        showError(
-          'Edição não suportada',
-          'O backend atual não possui endpoint para atualizar produtos. Você pode excluir e recriar o produto com as novas informações.'
-        )
-        return
+        await atualizarProduto(produto.id, produtoData)
+        showSuccess('Produto atualizado', 'As informações do produto foram atualizadas com sucesso')
+      } else {
+        await criarProduto(produtoData)
+        showSuccess('Produto criado', 'Novo produto foi adicionado com sucesso')
       }
-
-      await criarProduto(produtoData)
-      showSuccess('Produto criado', 'Novo produto foi adicionado com sucesso')
 
       reset()
       onClose()
@@ -138,11 +134,7 @@ export const ProdutoModal: React.FC<ProdutoModalProps> = ({
 
         {/* Formulário */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-          {isEditing && (
-            <div className="p-3 rounded-md border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300">
-              Aviso: a edição de produto não é suportada pelo backend atual. Você pode excluir e recriar o produto com as novas informações.
-            </div>
-          )}
+          {/* Em modo edição, nenhuma advertência é necessária agora que o backend suporta atualização */}
           {/* Nome e Categoria */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -248,7 +240,7 @@ export const ProdutoModal: React.FC<ProdutoModalProps> = ({
           
           <button
             onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting || loading || isEditing}
+            disabled={isSubmitting || loading}
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Save className="w-4 h-4" />
@@ -256,7 +248,7 @@ export const ProdutoModal: React.FC<ProdutoModalProps> = ({
               {isSubmitting || loading 
                 ? 'Salvando...' 
                 : isEditing 
-                  ? 'Atualização indisponível' 
+                  ? 'Atualizar Produto' 
                   : 'Criar Produto'
               }
             </span>

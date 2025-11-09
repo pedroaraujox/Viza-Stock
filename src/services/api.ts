@@ -248,6 +248,31 @@ export const produtosService = {
       throw new Error(getApiErrorMessage(error))
     }
   }
+  ,
+  // Atualizar produto
+  atualizar: async (id: string, dto: ProdutoRequestDTO): Promise<Produto> => {
+    try {
+      const response = await api.put(`/produtos/${id}`, dto)
+      return response.data as Produto
+    } catch (error) {
+      if (shouldUseMocks()) {
+        console.warn('API não disponível, simulando atualização:', error)
+        const produto = mockProdutos.find(p => p.id === id)
+        if (!produto) {
+          throw new Error('Produto não encontrado para atualização')
+        }
+        // Atualiza campos básicos
+        produto.nome = dto.nome ?? produto.nome
+        produto.desc = dto.desc ?? produto.desc
+        produto.unidadeMedida = dto.unidadeMedida ?? produto.unidadeMedida
+        if (dto.tipo) {
+          produto.tipo = dto.tipo
+        }
+        return produto
+      }
+      throw new Error(getApiErrorMessage(error))
+    }
+  }
 }
 
 // Serviços de Produção

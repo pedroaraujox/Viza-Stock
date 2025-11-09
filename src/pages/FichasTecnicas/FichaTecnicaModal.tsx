@@ -7,6 +7,7 @@ import { useProdutoStore } from '../../stores/produtoStore'
 import { useProducaoStore } from '../../stores/producaoStore'
 import { useNotifications } from '../../stores/uiStore'
 import type { FichaTecnica } from '../../types'
+import type { TemplateFichaTecnica } from './TemplatesModal'
 import { cn } from '../../lib/utils'
 
 const fichaTecnicaSchema = z.object({
@@ -26,12 +27,14 @@ interface FichaTecnicaModalProps {
   ficha?: FichaTecnica | null
   onClose: () => void
   onSuccess: () => void
+  initialTemplate?: TemplateFichaTecnica
 }
 
 export const FichaTecnicaModal: React.FC<FichaTecnicaModalProps> = ({
   ficha,
   onClose,
-  onSuccess
+  onSuccess,
+  initialTemplate
 }) => {
   const { produtos, fetchProdutos } = useProdutoStore()
   const { criarProdutoAcabado } = useProducaoStore()
@@ -44,6 +47,7 @@ export const FichaTecnicaModal: React.FC<FichaTecnicaModalProps> = ({
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors }
   } = useForm<FichaTecnicaFormData>({
     resolver: zodResolver(fichaTecnicaSchema),
@@ -78,6 +82,32 @@ export const FichaTecnicaModal: React.FC<FichaTecnicaModalProps> = ({
       }
     }
   }, [watchedProdutoId, produtos, setValue])
+
+  // Aplicar template inicial (quando fornecido)
+  useEffect(() => {
+    if (initialTemplate) {
+      // Encontrar produto final pelo nome
+      const produtoFinal = produtos.find(p => p.nome.toLowerCase() === initialTemplate.nomeProduto.toLowerCase())
+
+      const componentesMapeados = initialTemplate.componentes.map(c => {
+        const prod = produtos.find(p => p.nome.toLowerCase() === c.nome.toLowerCase())
+        return {
+          produtoId: prod?.id || '',
+          quantidade: c.quantidade
+        }
+      })
+
+      reset({
+        produtoId: produtoFinal?.id || '',
+        descricao: initialTemplate.descricao,
+        quantidadeFinal: 1,
+        unidadeMedida: produtoFinal?.unidadeMedida || initialTemplate.unidadeProduto,
+        componentes: componentesMapeados.length > 0
+          ? componentesMapeados
+          : [{ produtoId: '', quantidade: 1 }]
+      })
+    }
+  }, [initialTemplate, produtos, reset])
 
   // Produtos disponíveis para seleção (excluindo o produto final)
   const produtosDisponiveis = produtos.filter(p => p.id !== watchedProdutoId)

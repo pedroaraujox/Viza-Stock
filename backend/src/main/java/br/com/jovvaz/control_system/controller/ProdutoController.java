@@ -43,6 +43,18 @@ public class ProdutoController {
         return estoqueService.criarProduto(dto);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Produto> atualizarProduto(@PathVariable String id, @RequestBody ProdutoRequestDTO dto) {
+        try {
+            Produto atualizado = estoqueService.atualizarProduto(id, dto);
+            return ResponseEntity.ok(atualizado);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
     @PostMapping("/entrada")
     public ResponseEntity<Produto> darEntradaEstoque(@RequestBody ProdutoEntradaDTO dto) {
         try {

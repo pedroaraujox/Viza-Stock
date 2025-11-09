@@ -1,13 +1,13 @@
 import React from 'react'
 import { X, BookOpen } from 'lucide-react'
 
-interface TemplateComponente {
+export interface TemplateComponente {
   nome: string
   quantidade: number
   unidade: string
 }
 
-interface TemplateFichaTecnica {
+export interface TemplateFichaTecnica {
   id: string
   nomeProduto: string
   unidadeProduto: string
@@ -17,10 +17,11 @@ interface TemplateFichaTecnica {
 
 interface TemplatesModalProps {
   onClose: () => void
+  onUseTemplate?: (template: TemplateFichaTecnica) => void
 }
 
 // Templates estáticos de exemplo
-const templates: TemplateFichaTecnica[] = [
+export const templates: TemplateFichaTecnica[] = [
   {
     id: 'tpl-01',
     nomeProduto: 'Bolo de Milho',
@@ -70,7 +71,7 @@ const templates: TemplateFichaTecnica[] = [
   }
 ]
 
-export const TemplatesModal: React.FC<TemplatesModalProps> = ({ onClose }) => {
+export const TemplatesModal: React.FC<TemplatesModalProps> = ({ onClose, onUseTemplate }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden">
@@ -108,13 +109,22 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({ onClose }) => {
                       </li>
                     ))}
                   </ul>
+                  {/* Botão para usar o template */}
+                  <div className="mt-4">
+                    <button
+                      className="w-full px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                      onClick={() => onUseTemplate?.(tpl)}
+                    >
+                      Usar este Template
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
           <div className="mt-6 text-xs text-gray-500 dark:text-gray-400">
-            Observação: estes templates são exemplos visuais. Para utilizar um template como base, crie uma nova ficha técnica e replique os componentes conforme necessário.
+            Dica: clique em "Usar este Template" para iniciar uma nova ficha técnica com os dados preenchidos. Você poderá ajustar os produtos e quantidades antes de salvar.
           </div>
         </div>
       </div>

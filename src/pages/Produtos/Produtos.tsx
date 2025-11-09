@@ -53,6 +53,11 @@ export const Produtos: React.FC = () => {
   }, [searchTerm, filtros.busca, setFiltros])
 
   // Removido handler de edição não suportada no backend atual
+  const handleEditarProduto = (produto: Produto) => {
+    setProdutoSelecionado(produto)
+    setModoEdicao(true)
+    setShowProdutoModal(true)
+  }
 
   const handleNovoProduto = () => {
     setProdutoSelecionado(null)
@@ -345,9 +350,9 @@ export const Produtos: React.FC = () => {
 
                     <div className="flex items-center space-x-1">
                       <button
-                        disabled
-                        className="p-2 text-gray-400 dark:text-gray-500 opacity-50 cursor-not-allowed rounded-md"
-                        title="Edição não suportada no backend atual"
+                        onClick={() => handleEditarProduto(produto)}
+                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                        title="Editar produto"
                       >
                         <Edit className="w-4 h-4" />
                       </button>

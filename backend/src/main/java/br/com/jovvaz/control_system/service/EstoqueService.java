@@ -114,6 +114,29 @@ public class EstoqueService {
         return produtoRepository.findAll();
     }
 
+    @Transactional
+    public Produto atualizarProduto(String id, ProdutoRequestDTO dto) {
+        Produto existente = produtoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com ID: " + id));
+
+        // Atualiza apenas campos permitidos
+        if (dto.getNome() != null && !dto.getNome().trim().isEmpty()) {
+            existente.setNome(dto.getNome().trim());
+        }
+        if (dto.getDesc() != null) {
+            existente.setDesc(dto.getDesc());
+        }
+        if (dto.getUnidadeMedida() != null && !dto.getUnidadeMedida().trim().isEmpty()) {
+            existente.setUnidadeMedida(dto.getUnidadeMedida().trim());
+        }
+        // Atualização de tipo é opcional; habilitada aqui, mas pode ser restringida conforme regras de negócio
+        if (dto.getTipo() != null) {
+            existente.setTipo(dto.getTipo());
+        }
+
+        return produtoRepository.save(existente);
+    }
+
     // Utilidades internas para IDs numéricos
     private String gerarProximoIdNumerico() {
         // Busca todos os IDs, encontra o maior numérico e incrementa
