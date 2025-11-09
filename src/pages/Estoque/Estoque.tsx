@@ -17,6 +17,7 @@ import type { MovimentacaoEstoque, Produto } from '../../types'
 import { cn } from '../../lib/utils'
 import { useNotifications } from '../../stores/uiStore'
 import { EstoqueModal } from '../Produtos'
+import { usePermissions } from '../../stores/authStore'
 
 export const Estoque: React.FC = () => {
   const { produtos, fetchProdutos, deletarProduto } = useProdutoStore()
@@ -39,6 +40,8 @@ export const Estoque: React.FC = () => {
   const [estoqueModalAberto, setEstoqueModalAberto] = useState(false)
   const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null)
   const { showSuccess, showError } = useNotifications()
+  const { canAccessSystem } = usePermissions()
+  const podeEditarExcluir = canAccessSystem(['ROOT', 'ADMINISTRADOR'])
 
   useEffect(() => {
     const loadData = async () => {
@@ -68,6 +71,10 @@ export const Estoque: React.FC = () => {
 
   // Ações de edição/exclusão
   const abrirModalEstoque = (produto: Produto) => {
+    if (!podeEditarExcluir) {
+      showError('Permissão negada', 'Somente usuários ROOT ou ADMINISTRADOR podem editar o estoque.')
+      return
+    }
     setProdutoSelecionado(produto)
     setEstoqueModalAberto(true)
   }
@@ -78,6 +85,10 @@ export const Estoque: React.FC = () => {
   }
 
   const handleExcluirProduto = async (produto: Produto) => {
+    if (!podeEditarExcluir) {
+      showError('Permissão negada', 'Somente usuários ROOT ou ADMINISTRADOR podem excluir itens do estoque.')
+      return
+    }
     const confirmar = window.confirm(`Tem certeza que deseja excluir "${produto.nome}"? Esta ação não pode ser desfeita.`)
     if (!confirmar) return
     try {
@@ -470,22 +481,26 @@ export const Estoque: React.FC = () => {
                     </p>
                   </div>
                   {/* Ações: Editar (Entrada/Saída) e Excluir */}
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => abrirModalEstoque(p)}
-                      title="Editar estoque (adicionar/retirar)"
-                      className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <Pencil className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                    </button>
-                    <button
-                      onClick={() => handleExcluirProduto(p)}
-                      title="Excluir produto"
-                      className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </button>
-                  </div>
+                  {podeEditarExcluir ? (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => abrirModalEstoque(p)}
+                        title="Editar estoque (adicionar/retirar)"
+                        className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <Pencil className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                      </button>
+                      <button
+                        onClick={() => handleExcluirProduto(p)}
+                        title="Excluir produto"
+                        className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Sem permissão para editar/excluir</div>
+                  )}
                 </div>
               </div>
             ))}
