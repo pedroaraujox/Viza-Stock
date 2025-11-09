@@ -34,6 +34,13 @@ export const Produtos: React.FC = () => {
     fetchProdutos()
   }, [fetchProdutos])
 
+  // Na página de Produtos, sempre exibir apenas "Produto acabado"
+  useEffect(() => {
+    if (filtros.tipo !== 'PRODUTO_ACABADO') {
+      setFiltros({ tipo: 'PRODUTO_ACABADO' })
+    }
+  }, [setFiltros])
+
   // Atualiza o filtro de busca apenas quando o termo muda.
   // Importante: não dependemos de `filtros` aqui para evitar loop infinito
   // (cada atualização de `filtros` causava nova execução deste effect).
@@ -74,6 +81,9 @@ export const Produtos: React.FC = () => {
 
   const tiposDisponiveis = [...new Set(produtos?.map(p => p.tipo) || [])]
 
+  // Garante que apenas produtos acabados sejam mostrados na página
+  const produtosApenasAcabados = (produtosFiltrados || []).filter(p => p.tipo === 'PRODUTO_ACABADO')
+
   if (loading && (produtos?.length || 0) === 0) {
     return (
       <div className="space-y-6">
@@ -98,7 +108,7 @@ export const Produtos: React.FC = () => {
             Gestão de Produtos
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {produtosFiltrados?.length || 0} produtos encontrados
+            {produtosApenasAcabados?.length || 0} produtos encontrados
           </p>
         </div>
         
@@ -147,28 +157,27 @@ export const Produtos: React.FC = () => {
         {showFilters && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Tipo */}
+              {/* Tipo fixo: a página exibe apenas Produto acabado */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Tipo
                 </label>
                 <select
-                  value={filtros.tipo || ''}
-                  onChange={(e) => setFiltros({ ...filtros, tipo: (e.target.value || undefined) as Produto['tipo'] })}
-                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={"PRODUTO_ACABADO"}
+                  disabled
+                  className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-500 dark:text-gray-400 cursor-not-allowed"
                 >
-                  <option value="">Todos os tipos</option>
-                  {tiposDisponiveis.map(tipo => (
-                    <option key={tipo} value={tipo}>{formatTipo(tipo)}</option>
-                  ))}
+                  <option value="PRODUTO_ACABADO">Produto acabado</option>
                 </select>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Esta página mostra apenas produtos acabados.</p>
               </div>
 
               {/* Botão Limpar Filtros */}
               <div className="flex items-end">
                 <button
                   onClick={() => {
-                    setFiltros({})
+                    // Mantém o filtro de tipo como Produto acabado
+                    setFiltros({ busca: undefined, tipo: 'PRODUTO_ACABADO' })
                     setSearchTerm('')
                   }}
                   className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
@@ -191,7 +200,7 @@ export const Produtos: React.FC = () => {
         </div>
       )}
 
-      {(produtosFiltrados?.length || 0) === 0 ? (
+      {(produtosApenasAcabados?.length || 0) === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-12 border border-gray-200 dark:border-gray-700 text-center">
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -207,7 +216,7 @@ export const Produtos: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {produtosFiltrados.map((produto) => {
+          {produtosApenasAcabados.map((produto) => {
             const statusEstoque = getStatusEstoque(produto)
             
             return (
