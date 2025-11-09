@@ -50,7 +50,7 @@ export const Produtos: React.FC = () => {
     if (filtros.busca !== searchTerm) {
       setFiltros({ busca: searchTerm })
     }
-  }, [searchTerm])
+  }, [searchTerm, filtros.busca, setFiltros])
 
   // Removido handler de edição não suportada no backend atual
 

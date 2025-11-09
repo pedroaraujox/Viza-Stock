@@ -21,7 +21,6 @@ const baseURL = rawBase.endsWith('/api')
 // Flag para controlar uso de mocks explicitamente via env
 // Por padrão, NÃO usa mocks (apenas quando VITE_USE_MOCKS === 'true')
 const USE_MOCKS = String(import.meta.env.VITE_USE_MOCKS).toLowerCase() === 'true'
-const IS_DEV = Boolean(import.meta.env.DEV)
 
 const api = axios.create({
   baseURL,
@@ -80,7 +79,7 @@ function getApiErrorMessage(error: unknown): string {
 }
 
 // Helper para decidir se devemos usar mocks automaticamente em dev quando a API falhar
-function shouldUseMocks(error: unknown): boolean {
+function shouldUseMocks(): boolean {
   // Apenas usa mocks quando explicitamente habilitado via VITE_USE_MOCKS=true
   return USE_MOCKS
 }
@@ -120,11 +119,29 @@ const mockFichasTecnicas: FichaTecnica[] = []
 export const produtosService = {
   // Listar todos os produtos
   listar: async (): Promise<Produto[]> => {
-    try {
+    const attempt = async () => {
       const response = await api.get('/produtos')
-      return response.data
+      return response.data as Produto[]
+    }
+
+    try {
+      return await attempt()
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      const isNetwork = axios.isAxiosError(error) && !error.response
+      // Uma tentativa de retry rápida em caso de erro de rede/transiente
+      if (isNetwork) {
+        await new Promise(res => setTimeout(res, 500))
+        try {
+          return await attempt()
+        } catch (err2) {
+          if (shouldUseMocks()) {
+            console.warn('API não disponível, usando dados mock (após retry):', err2)
+            return mockProdutos
+          }
+          throw err2
+        }
+      }
+      if (shouldUseMocks()) {
         console.warn('API não disponível, usando dados mock:', error)
         return mockProdutos
       }
@@ -138,7 +155,7 @@ export const produtosService = {
       const response = await api.get(`/produtos/${id}`)
       return response.data
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      if (shouldUseMocks()) {
         console.warn('API não disponível, buscando produto mock:', error)
         const produto = mockProdutos.find(p => p.id === id)
         if (!produto) {
@@ -156,7 +173,7 @@ export const produtosService = {
       const response = await api.post('/produtos', produto)
       return response.data
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      if (shouldUseMocks()) {
         console.warn('API não disponível, simulando criação:', error)
         const novoProduto: Produto = {
           id: produto.id || Date.now().toString(),
@@ -179,7 +196,7 @@ export const produtosService = {
       const response = await api.post(`/produtos/entrada`, entrada)
       return response.data
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      if (shouldUseMocks()) {
         console.warn('API não disponível, simulando entrada:', error)
         const produto = mockProdutos.find(p => p.id === entrada.produtoId)
         if (!produto) {
@@ -201,7 +218,7 @@ export const produtosService = {
       })
       return response.data
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      if (shouldUseMocks()) {
         console.warn('API não disponível, simulando baixa:', error)
         const produto = mockProdutos.find(p => p.id === produtoId)
         if (!produto) {
@@ -219,7 +236,7 @@ export const produtosService = {
     try {
       await api.delete(`/produtos/${id}`)
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      if (shouldUseMocks()) {
         console.warn('API não disponível, simulando exclusão:', error)
         const index = mockProdutos.findIndex(p => p.id === id)
         if (index > -1) {
@@ -241,7 +258,7 @@ export const producaoService = {
       const response = await api.post('/producao/produto-acabado', produto)
       return response.data
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      if (shouldUseMocks()) {
         console.warn('API não disponível, simulando criação de produto acabado e ficha técnica:', error)
 
         // Garantir que o produto acabado exista/atualize no mockProdutos
@@ -302,7 +319,7 @@ export const producaoService = {
     try {
       await api.post('/producao/executar', ordem)
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      if (shouldUseMocks()) {
         console.warn('API não disponível, simulando execução de ordem de produção:', error)
         // Simular consumo de matérias-primas e incremento do estoque do produto acabado
         const ficha = mockFichasTecnicas.find(ft => ft.produtoAcabado.id === ordem.produtoAcabadoId)
@@ -333,7 +350,7 @@ export const producaoService = {
       })
       return response.data.viavel || false
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      if (shouldUseMocks()) {
         console.warn('API não disponível, simulando verificação de viabilidade:', error)
         const ficha = mockFichasTecnicas.find(ft => ft.produtoAcabado.id === produtoId)
         if (!ficha) return false
@@ -355,7 +372,7 @@ export const producaoService = {
       const response = await api.get('/producao/fichas-tecnicas')
       return response.data
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      if (shouldUseMocks()) {
         console.warn('API não disponível, usando fichas técnicas mock:', error)
         return mockFichasTecnicas
       }
@@ -369,7 +386,7 @@ export const producaoService = {
       const response = await api.get(`/producao/fichas-tecnicas/${produtoId}`)
       return response.data
     } catch (error) {
-      if (shouldUseMocks(error)) {
+      if (shouldUseMocks()) {
         console.warn('API não disponível, buscando ficha técnica mock:', error)
         const ficha = mockFichasTecnicas.find(ft => ft.produtoAcabado.id === produtoId)
         if (!ficha) {
