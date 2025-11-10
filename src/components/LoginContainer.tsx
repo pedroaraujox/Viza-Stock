@@ -61,7 +61,7 @@ export const LoginContainer: React.FC<LoginContainerProps> = ({ onLoginSuccess }
       transition: {
         duration: 10,
         repeat: Infinity,
-        ease: "linear"
+        ease: [0, 0, 1, 1] // linear
       }
     }
   }
@@ -72,7 +72,7 @@ export const LoginContainer: React.FC<LoginContainerProps> = ({ onLoginSuccess }
       transition: {
         duration: 4,
         repeat: Infinity,
-        ease: "easeInOut"
+        ease: [0.42, 0, 0.58, 1] // easeInOut
       }
     }
   }
@@ -102,7 +102,7 @@ export const LoginContainer: React.FC<LoginContainerProps> = ({ onLoginSuccess }
               duration: 3 + Math.random() * 2,
               repeat: Infinity,
               delay: Math.random() * 2,
-              ease: "easeInOut"
+              ease: [0.42, 0, 0.58, 1]
             }}
           />
         ))}

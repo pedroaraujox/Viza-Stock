@@ -14,6 +14,10 @@ export interface User {
   systemRole: SystemRole
 }
 
+// Usuário com credencial (mock) para fins de autenticação no frontend
+// Em produção, a senha não deve existir no frontend; será validada no backend
+export type AuthUser = User & { senha: string }
+
 interface AuthStore {
   // Estado
   user: User | null
@@ -31,7 +35,7 @@ interface AuthStore {
 }
 
 // Dados mockados para simulação de login
-const MOCK_USERS = [
+const MOCK_USERS: AuthUser[] = [
   // Usuário ROOT (desenvolvedores) – controle total
   {
     id: '0',
@@ -95,7 +99,7 @@ export const useAuthStore = create<AuthStore>()(
           await new Promise(resolve => setTimeout(resolve, 1000))
 
           // Validar credenciais: aceita login por usuário (preferencial) e, por compatibilidade, por email
-          let user = MOCK_USERS.find(u => (u.usuario === usuario || u.email === usuario) && u.senha === senha)
+          let user: AuthUser | undefined = MOCK_USERS.find(u => (u.usuario === usuario || u.email === usuario) && u.senha === senha)
 
           // Se não encontrar nos mocks, tentar usuários persistidos no frontend (Gerenciar Usuários)
           if (!user && typeof window !== 'undefined') {
@@ -116,7 +120,7 @@ export const useAuthStore = create<AuthStore>()(
                     role: found.role,
                     systemRole: found.systemRole,
                     senha: found.senha || ''
-                  }
+                  } as AuthUser
                 }
               }
             } catch {

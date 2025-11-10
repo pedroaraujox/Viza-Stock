@@ -52,7 +52,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         </div>
         {error && (
           <p id={`${inputId}-error`} className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
-            <span className="inline-block w-4 h-4 mr-1 text-center">⚠</span>
+            {/* Substitui símbolo Unicode por caractere ASCII para evitar problemas de build em ambientes restritos */}
+            <span className="inline-block w-4 h-4 mr-1 text-center" aria-hidden="true">!</span>
             {error}
           </p>
         )}

@@ -1,6 +1,7 @@
 ## 1. Arquitetura de Implementação
 
 ### 1.1 Stack Tecnológica
+
 ```mermaid
 graph TD
     A[React Frontend] --> B[TypeScript]
@@ -17,17 +18,25 @@ graph TD
 ```
 
 ### 1.2 Componentes e Dependências
-- **Frontend**: React 18 + TypeScript + Vite
-- **Estilização**: Tailwind CSS 3 + Headless UI
-- **Formulários**: React Hook Form + Zod (validação)
-- **Animações**: Framer Motion
-- **Ícones**: Lucide React
-- **Notificações**: React Hot Toast
-- **Temas**: next-themes
+
+* **Frontend**: React 18 + TypeScript + Vite
+
+* **Estilização**: Tailwind CSS 3 + Headless UI
+
+* **Formulários**: React Hook Form + Zod (validação)
+
+* **Animações**: Framer Motion
+
+* **Ícones**: Lucide React
+
+* **Notificações**: React Hot Toast
+
+* **Temas**: next-themes
 
 ## 2. Estrutura de Componentes
 
 ### 2.1 Hierarquia de Componentes
+
 ```
 LoginPage/
 ├── LoginContainer.tsx
@@ -40,6 +49,7 @@ LoginPage/
 ```
 
 ### 2.2 Componente Principal - LoginContainer
+
 ```typescript
 interface LoginContainerProps {
   onLoginSuccess: (user: User) => void;
@@ -55,6 +65,7 @@ const LoginContainer: React.FC<LoginContainerProps> = ({
 ```
 
 ### 2.3 Formulário de Login - LoginForm
+
 ```typescript
 interface LoginFormData {
   username: string;
@@ -74,6 +85,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
 ## 3. Implementação de Responsividade
 
 ### 3.1 Breakpoints e Layout
+
 ```css
 /* Mobile First Approach */
 .container {
@@ -89,6 +101,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
 ```
 
 ### 3.2 Grid System Adaptativo
+
 ```typescript
 const responsiveClasses = {
   container: 'min-h-screen flex items-center justify-center p-4',
@@ -100,6 +113,7 @@ const responsiveClasses = {
 ## 4. Sistema de Temas
 
 ### 4.1 Configuração do next-themes
+
 ```typescript
 // theme-provider.tsx
 import { ThemeProvider } from 'next-themes';
@@ -119,6 +133,7 @@ export function Providers({ children }) {
 ```
 
 ### 4.2 Toggle de Tema Component
+
 ```typescript
 const ThemeToggle: React.FC = () => {
   const { theme, setTheme } = useTheme();
@@ -137,6 +152,7 @@ const ThemeToggle: React.FC = () => {
 ## 5. Validação e Formulários
 
 ### 5.1 Schema de Validação com Zod
+
 ```typescript
 const loginSchema = z.object({
   username: z
@@ -153,6 +169,7 @@ const loginSchema = z.object({
 ```
 
 ### 5.2 React Hook Form Implementation
+
 ```typescript
 const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
   resolver: zodResolver(loginSchema),
@@ -163,6 +180,7 @@ const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>
 ## 6. Animações e Interações
 
 ### 6.1 Framer Motion Configurations
+
 ```typescript
 const fadeInUp = {
   initial: { opacity: 0, y: 60 },
@@ -180,6 +198,7 @@ const staggerContainer = {
 ```
 
 ### 6.2 Animações de Formulário
+
 ```typescript
 <motion.form
   variants={staggerContainer}
@@ -196,6 +215,7 @@ const staggerContainer = {
 ## 7. Integração com Backend
 
 ### 7.1 API Service Layer
+
 ```typescript
 // auth.service.ts
 class AuthService {
@@ -212,6 +232,7 @@ class AuthService {
 ```
 
 ### 7.2 Estado Global com Zustand
+
 ```typescript
 // authStore.ts
 interface AuthStore {
@@ -227,6 +248,7 @@ interface AuthStore {
 ## 8. Tratamento de Erros e Loading
 
 ### 8.1 Estados de Loading
+
 ```typescript
 const LoginButton: React.FC<{ isLoading: boolean }> = ({ isLoading }) => (
   <button
@@ -246,6 +268,7 @@ const LoginButton: React.FC<{ isLoading: boolean }> = ({ isLoading }) => (
 ```
 
 ### 8.2 Sistema de Notificações
+
 ```typescript
 // toast.config.ts
 import toast, { Toaster } from 'react-hot-toast';
@@ -268,6 +291,7 @@ export const showErrorToast = (message: string) => {
 ## 9. Segurança e Proteção
 
 ### 9.1 Rate Limiting no Frontend
+
 ```typescript
 const useRateLimit = (maxAttempts: number, timeWindow: number) => {
   const [attempts, setAttempts] = useState(0);
@@ -278,6 +302,7 @@ const useRateLimit = (maxAttempts: number, timeWindow: number) => {
 ```
 
 ### 9.2 Proteção de Inputs
+
 ```typescript
 const sanitizeInput = (input: string): string => {
   return input
@@ -290,6 +315,7 @@ const sanitizeInput = (input: string): string => {
 ## 10. Testes e Qualidade
 
 ### 10.1 Testes Unitários
+
 ```typescript
 // LoginForm.test.tsx
 describe('LoginForm', () => {
@@ -304,6 +330,7 @@ describe('LoginForm', () => {
 ```
 
 ### 10.2 Testes de Integração
+
 ```typescript
 // auth.integration.test.ts
 describe('Authentication Flow', () => {
@@ -320,12 +347,14 @@ describe('Authentication Flow', () => {
 ## 11. Performance Optimization
 
 ### 11.1 Lazy Loading
+
 ```typescript
 const LoginBackground = lazy(() => import('./LoginBackground'));
 const ForgotPasswordModal = lazy(() => import('./ForgotPasswordModal'));
 ```
 
 ### 11.2 Memoização
+
 ```typescript
 const LoginForm = memo(({ onSubmit, isLoading }: LoginFormProps) => {
   // Componente memoizado para evitar re-renders desnecessários
@@ -335,6 +364,7 @@ const LoginForm = memo(({ onSubmit, isLoading }: LoginFormProps) => {
 ## 12. Deployment e CI/CD
 
 ### 12.1 Build Configuration
+
 ```typescript
 // vite.config.ts
 export default defineConfig({
@@ -352,6 +382,7 @@ export default defineConfig({
 ```
 
 ### 12.2 Docker Configuration
+
 ```dockerfile
 # Dockerfile.frontend
 FROM node:18-alpine as builder
@@ -365,3 +396,4 @@ FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/nginx.conf
 ```
+

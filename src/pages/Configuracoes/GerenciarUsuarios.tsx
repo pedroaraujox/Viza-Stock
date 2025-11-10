@@ -325,7 +325,7 @@ export const GerenciarUsuarios: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium mb-1">Nome</label>
                 <input
-                  value={editUser.nome}
+                  value={editUser?.nome ?? ''}
                   onChange={(e) => setEditUser(prev => prev ? { ...prev, nome: e.target.value } as ManagedUser : prev)}
                   className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
                 />
@@ -334,7 +334,7 @@ export const GerenciarUsuarios: React.FC = () => {
                 <label className="block text-sm font-medium mb-1">Usuário</label>
                 <input
                   type="text"
-                  value={editUser.usuario}
+                  value={editUser?.usuario ?? ''}
                   onChange={(e) => setEditUser(prev => prev ? { ...prev, usuario: e.target.value } as ManagedUser : prev)}
                   className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
                 />
@@ -343,7 +343,7 @@ export const GerenciarUsuarios: React.FC = () => {
                 <label className="block text-sm font-medium mb-1">Email</label>
                 <input
                   type="email"
-                  value={editUser.email}
+                  value={editUser?.email ?? ''}
                   onChange={(e) => setEditUser(prev => prev ? { ...prev, email: e.target.value } as ManagedUser : prev)}
                   className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
                 />
@@ -352,7 +352,7 @@ export const GerenciarUsuarios: React.FC = () => {
                 <label className="block text-sm font-medium mb-1">Senha</label>
                 <input
                   type="password"
-                  value={editUser.senha}
+                  value={editUser?.senha ?? ''}
                   onChange={(e) => setEditUser(prev => prev ? { ...prev, senha: e.target.value } as ManagedUser : prev)}
                   className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
                 />
@@ -360,7 +360,7 @@ export const GerenciarUsuarios: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium mb-1">Departamento</label>
                 <select
-                  value={editUser.department}
+                  value={editUser?.department ?? 'FATURAMENTO'}
                   onChange={(e) => setEditUser(prev => prev ? { ...prev, department: e.target.value as Department } as ManagedUser : prev)}
                   className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
                 >
@@ -374,7 +374,7 @@ export const GerenciarUsuarios: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium mb-1">Acesso (Sistema)</label>
                 <select
-                  value={editUser.systemRole}
+                  value={editUser?.systemRole ?? 'PADRAO'}
                   onChange={(e) => setEditUser(prev => prev ? { ...prev, systemRole: e.target.value as SystemRole } as ManagedUser : prev)}
                   className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
                 >
