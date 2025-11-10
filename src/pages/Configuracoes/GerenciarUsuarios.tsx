@@ -363,7 +363,7 @@ export const GerenciarUsuarios: React.FC = () => {
                 onClick={() => {
                   if (!editUser) return
                   // Atualiza lista
-                  setUsers(prev => prev.map(usr => usr.id === editUser.id ? editUser : usr))
+                  updateUser(editUser)
                   setEditUser(null)
                 }}
               >

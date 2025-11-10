@@ -33,7 +33,8 @@ services:
       - ./:/app
       # Evitar sobrescrever node_modules do container
       - /app/node_modules
-    command: sh -c "npm run dev -- --host 0.0.0.0"
+    # Inicia o Vite após garantir que as dependências estejam instaladas (quando o volume /app/node_modules estiver vazio)
+    command: sh -c "[ -d node_modules ] || npm ci --no-audit --no-fund; npm run dev -- --host 0.0.0.0"
     depends_on:
       - backend
     restart: unless-stopped
