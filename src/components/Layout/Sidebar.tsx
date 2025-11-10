@@ -18,7 +18,7 @@ const menuItems = [
   {
     title: 'Dashboard',
     icon: LayoutDashboard,
-    path: '/',
+    path: '/dashboard',
     description: 'Visão geral do sistema'
   },
   {
