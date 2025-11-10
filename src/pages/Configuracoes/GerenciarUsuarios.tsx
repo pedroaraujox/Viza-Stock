@@ -32,6 +32,9 @@ export const GerenciarUsuarios: React.FC = () => {
     { id: '1', nome: 'Operador de Estoque', email: 'operador@viza.com', role: 'OPERADOR_ESTOQUE', systemRole: 'PADRAO', department: 'EMBALADORA' }
   ])
 
+  const [viewUser, setViewUser] = useState<ManagedUser | null>(null)
+  const [editUser, setEditUser] = useState<ManagedUser | null>(null)
+
   const canCreateSystemRoles: SystemRole[] = useMemo(() => {
     if (currentUser?.systemRole === 'ROOT') return ['ROOT', 'ADMINISTRADOR', 'PADRAO']
     if (currentUser?.systemRole === 'ADMINISTRADOR') return ['PADRAO']
@@ -169,12 +172,16 @@ export const GerenciarUsuarios: React.FC = () => {
                   <td className="py-2 pr-4">{u.department}</td>
                   <td className="py-2 pr-4">{u.role}</td>
                   <td className="py-2 pr-4">
-                    <button className="inline-flex items-center px-2 py-1 mr-2 rounded border dark:border-gray-600">
+                    <button
+                      onClick={() => setViewUser(u)}
+                      className="inline-flex items-center px-2 py-1 mr-2 rounded border dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
                       <Eye className="w-4 h-4 mr-1" />
                       Visualizar
                     </button>
                     <button
                       disabled={!editable}
+                      onClick={() => editable && setEditUser(u)}
                       className={`inline-flex items-center px-2 py-1 rounded ${editable ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
                     >
                       <Edit className="w-4 h-4 mr-1" />
@@ -187,6 +194,104 @@ export const GerenciarUsuarios: React.FC = () => {
           </tbody>
         </table>
       </div>
+      {/* Modal de Visualização */}
+      {viewUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setViewUser(null)} />
+          <div className="relative z-10 w-full max-w-md rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-lg">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Detalhes do Usuário</h3>
+            <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+              <p><span className="font-medium">Nome:</span> {viewUser.nome}</p>
+              <p><span className="font-medium">Email:</span> {viewUser.email}</p>
+              <p><span className="font-medium">Acesso (Sistema):</span> {viewUser.systemRole}</p>
+              <p><span className="font-medium">Departamento:</span> {viewUser.department}</p>
+              <p><span className="font-medium">Papel (Funcional):</span> {viewUser.role}</p>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                className="inline-flex items-center px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                onClick={() => setViewUser(null)}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição */}
+      {editUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setEditUser(null)} />
+          <div className="relative z-10 w-full max-w-md rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-lg">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Editar Usuário</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nome</label>
+                <input
+                  value={editUser.nome}
+                  onChange={(e) => setEditUser(prev => prev ? { ...prev, nome: e.target.value } as ManagedUser : prev)}
+                  className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editUser.email}
+                  onChange={(e) => setEditUser(prev => prev ? { ...prev, email: e.target.value } as ManagedUser : prev)}
+                  className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Departamento</label>
+                <select
+                  value={editUser.department}
+                  onChange={(e) => setEditUser(prev => prev ? { ...prev, department: e.target.value as Department } as ManagedUser : prev)}
+                  className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
+                >
+                  <option value="FATURAMENTO">Faturamento</option>
+                  <option value="EMBALADORA">Embaladora</option>
+                  <option value="EXTRUSORA">Extrusora</option>
+                  <option value="TI">TI</option>
+                  <option value="DIRETORIA">Diretoria</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Acesso (Sistema)</label>
+                <select
+                  value={editUser.systemRole}
+                  onChange={(e) => setEditUser(prev => prev ? { ...prev, systemRole: e.target.value as SystemRole } as ManagedUser : prev)}
+                  className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
+                >
+                  <option value="PADRAO" disabled={!canCreateSystemRoles.includes('PADRAO')}>Padrão</option>
+                  <option value="ADMINISTRADOR" disabled={!canCreateSystemRoles.includes('ADMINISTRADOR')}>Administrador (Sistema)</option>
+                  <option value="ROOT" disabled={!canCreateSystemRoles.includes('ROOT')}>ROOT (Desenvolvedor)</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                className="inline-flex items-center px-3 py-2 rounded border dark:border-gray-600"
+                onClick={() => setEditUser(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="inline-flex items-center px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+                onClick={() => {
+                  if (!editUser) return
+                  // Atualiza lista
+                  setUsers(prev => prev.map(usr => usr.id === editUser.id ? editUser : usr))
+                  setEditUser(null)
+                }}
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
