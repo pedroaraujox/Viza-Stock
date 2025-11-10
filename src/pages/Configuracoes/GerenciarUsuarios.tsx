@@ -3,7 +3,7 @@ import { useAuthStore, User, SystemRole } from '../../stores/authStore'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Users, UserPlus, Edit, Eye, ShieldCheck, Search } from 'lucide-react'
+import { Users, UserPlus, Edit, Eye, ShieldCheck, Search, Trash } from 'lucide-react'
 
 type Department = 'FATURAMENTO' | 'EMBALADORA' | 'EXTRUSORA' | 'TI' | 'DIRETORIA'
 type ManagedUser = User & { department: Department }
@@ -34,6 +34,7 @@ export const GerenciarUsuarios: React.FC = () => {
 
   const [viewUser, setViewUser] = useState<ManagedUser | null>(null)
   const [editUser, setEditUser] = useState<ManagedUser | null>(null)
+  const [deleteUser, setDeleteUser] = useState<ManagedUser | null>(null)
   const [query, setQuery] = useState('')
 
   const canCreateSystemRoles: SystemRole[] = useMemo(() => {
@@ -45,6 +46,20 @@ export const GerenciarUsuarios: React.FC = () => {
   const canEditUser = (target: ManagedUser) => {
     if (currentUser?.systemRole === 'ROOT') return true
     if (currentUser?.systemRole === 'ADMINISTRADOR') return target.systemRole === 'PADRAO'
+    return false
+  }
+
+  const canDeleteUser = (target: ManagedUser) => {
+    // Permissões de exclusão:
+    // - ROOT: pode excluir qualquer usuário, exceto a si próprio
+    // - ADMINISTRADOR: pode excluir apenas usuários PADRÃO, exceto a si próprio
+    if (!currentUser) return false
+    if (currentUser.systemRole === 'ROOT') {
+      return target.id !== currentUser.id
+    }
+    if (currentUser.systemRole === 'ADMINISTRADOR') {
+      return target.systemRole === 'PADRAO' && target.id !== currentUser.id
+    }
     return false
   }
 
@@ -146,7 +161,7 @@ export const GerenciarUsuarios: React.FC = () => {
           )}
           {currentUser?.systemRole === 'ADMINISTRADOR' && (
             <>
-              <p>Como Administrador do sistema, você pode criar usuários PADRÃO e editar todas as informações de usuários PADRÃO.</p>
+              <p>Como Administrador do sistema, você pode criar usuários PADRÃO e editar e excluir usuários PADRÃO.</p>
               <p>Usuários ADMINISTRADORES e ROOT são somente leitura para você.</p>
             </>
           )}
@@ -242,6 +257,16 @@ export const GerenciarUsuarios: React.FC = () => {
                       >
                         <Edit className="w-4 h-4" />
                         <span className="ml-2 hidden sm:inline">Editar</span>
+                      </button>
+                      <button
+                        title={canDeleteUser(u) ? 'Excluir' : 'Somente usuários ROOT podem excluir'}
+                        aria-label={`Excluir usuário ${u.nome}`}
+                        disabled={!canDeleteUser(u)}
+                        onClick={() => canDeleteUser(u) && setDeleteUser(u)}
+                        className={`inline-flex items-center justify-center h-8 px-3 rounded-md ${canDeleteUser(u) ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+                      >
+                        <Trash className="w-4 h-4" />
+                        <span className="ml-2 hidden sm:inline">Excluir</span>
                       </button>
                     </div>
                   </td>
@@ -344,6 +369,35 @@ export const GerenciarUsuarios: React.FC = () => {
                 }}
               >
                 Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Exclusão */}
+      {deleteUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteUser(null)} />
+          <div className="relative z-10 w-full max-w-md rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-lg">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Excluir Usuário</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300">Tem certeza que deseja excluir o usuário <span className="font-semibold">{deleteUser.nome}</span>? Esta ação não pode ser desfeita.</p>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                className="inline-flex items-center px-3 py-2 rounded border dark:border-gray-600"
+                onClick={() => setDeleteUser(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="inline-flex items-center px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                onClick={() => {
+                  if (!deleteUser) return
+                  setUsers(prev => prev.filter(usr => usr.id !== deleteUser.id))
+                  setDeleteUser(null)
+                }}
+              >
+                Excluir
               </button>
             </div>
           </div>
