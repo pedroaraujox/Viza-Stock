@@ -3,7 +3,7 @@ import { useAuthStore, User, SystemRole } from '../../stores/authStore'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Users, UserPlus, Edit, Eye, ShieldCheck } from 'lucide-react'
+import { Users, UserPlus, Edit, Eye, ShieldCheck, Search } from 'lucide-react'
 
 type Department = 'FATURAMENTO' | 'EMBALADORA' | 'EXTRUSORA' | 'TI' | 'DIRETORIA'
 type ManagedUser = User & { department: Department }
@@ -34,6 +34,7 @@ export const GerenciarUsuarios: React.FC = () => {
 
   const [viewUser, setViewUser] = useState<ManagedUser | null>(null)
   const [editUser, setEditUser] = useState<ManagedUser | null>(null)
+  const [query, setQuery] = useState('')
 
   const canCreateSystemRoles: SystemRole[] = useMemo(() => {
     if (currentUser?.systemRole === 'ROOT') return ['ROOT', 'ADMINISTRADOR', 'PADRAO']
@@ -77,13 +78,63 @@ export const GerenciarUsuarios: React.FC = () => {
     form.reset()
   }
 
+  // Filtro de busca simples por nome/email/departamento/role
+  const filteredUsers = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return users
+    return users.filter((u) =>
+      [u.nome, u.email, u.department, u.role, u.systemRole]
+        .join(' ')
+        .toLowerCase()
+        .includes(q)
+    )
+  }, [users, query])
+
+  // Badges reutilizáveis para melhorar legibilidade e estética
+  const SystemRoleBadge: React.FC<{ role: SystemRole }> = ({ role }) => {
+    const styles: Record<SystemRole, string> = {
+      ROOT: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+      ADMINISTRADOR: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+      PADRAO: 'bg-gray-100 text-gray-700 dark:bg-gray-700/40 dark:text-gray-300 border-gray-200 dark:border-gray-700'
+    }
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border ${styles[role]}`}>{role}</span>
+    )
+  }
+
+  const DepartmentBadge: React.FC<{ dep: Department }> = ({ dep }) => (
+    <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 border-teal-200 dark:border-teal-800">
+      {dep}
+    </span>
+  )
+
+  const RoleBadge: React.FC<{ role: ManagedUser['role'] }> = ({ role }) => (
+    <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">
+      {role}
+    </span>
+  )
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-      <div className="flex items-center space-x-3 mb-6">
-        <Users className="w-6 h-6 text-blue-600" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Gerenciar Usuários
-        </h2>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div className="flex items-center space-x-3">
+          <Users className="w-6 h-6 text-blue-600" />
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Gerenciar Usuários</h2>
+        </div>
+        {/* Busca */}
+        <div className="w-full md:w-80">
+          <label htmlFor="user-search" className="sr-only">Buscar usuário</label>
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              id="user-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por nome, email, departamento ou papel"
+              className="w-full pl-9 pr-3 py-2 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Aviso de permissões */}
@@ -149,44 +200,50 @@ export const GerenciarUsuarios: React.FC = () => {
       </form>
 
       {/* Lista de usuários */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
         <table className="min-w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur">
             <tr className="text-left border-b dark:border-gray-700">
-              <th className="py-2 pr-4">Nome</th>
-              <th className="py-2 pr-4">Email</th>
-              <th className="py-2 pr-4">Acesso (Sistema)</th>
-              <th className="py-2 pr-4">Departamento</th>
-              <th className="py-2 pr-4">Papel (Funcional)</th>
-              <th className="py-2 pr-4">Ações</th>
+              <th className="py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Nome</th>
+              <th className="py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Email</th>
+              <th className="py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Acesso (Sistema)</th>
+              <th className="py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Departamento</th>
+              <th className="py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Papel (Funcional)</th>
+              <th className="py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {users.map(u => {
+            {filteredUsers.map(u => {
               const editable = canEditUser(u)
               return (
-                <tr key={u.id} className="border-b dark:border-gray-700">
-                  <td className="py-2 pr-4">{u.nome}</td>
-                  <td className="py-2 pr-4">{u.email}</td>
-                  <td className="py-2 pr-4">{u.systemRole}</td>
-                  <td className="py-2 pr-4">{u.department}</td>
-                  <td className="py-2 pr-4">{u.role}</td>
-                  <td className="py-2 pr-4">
-                    <button
-                      onClick={() => setViewUser(u)}
-                      className="inline-flex items-center px-2 py-1 mr-2 rounded border dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      Visualizar
-                    </button>
-                    <button
-                      disabled={!editable}
-                      onClick={() => editable && setEditUser(u)}
-                      className={`inline-flex items-center px-2 py-1 rounded ${editable ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Editar
-                    </button>
+                <tr key={u.id} className="border-b dark:border-gray-700 odd:bg-gray-50 dark:odd:bg-gray-700/40 hover:bg-gray-100/70 dark:hover:bg-gray-700 transition-colors">
+                  <td className="py-3 px-4 text-gray-900 dark:text-gray-100">{u.nome}</td>
+                  <td className="py-3 px-4 text-gray-700 dark:text-gray-300">{u.email}</td>
+                  <td className="py-3 px-4"><SystemRoleBadge role={u.systemRole} /></td>
+                  <td className="py-3 px-4"><DepartmentBadge dep={u.department} /></td>
+                  <td className="py-3 px-4"><RoleBadge role={u.role} /></td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        title="Visualizar"
+                        aria-label={`Visualizar usuário ${u.nome}`}
+                        onClick={() => setViewUser(u)}
+                        className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span className="sr-only">Visualizar</span>
+                      </button>
+                      <button
+                        title={editable ? 'Editar' : 'Sem permissão para editar'}
+                        aria-label={`Editar usuário ${u.nome}`}
+                        disabled={!editable}
+                        onClick={() => editable && setEditUser(u)}
+                        className={`inline-flex items-center justify-center h-8 px-3 rounded-md ${editable ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span className="ml-2 hidden sm:inline">Editar</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )
