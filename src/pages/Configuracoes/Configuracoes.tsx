@@ -40,14 +40,17 @@ export const Configuracoes: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'perfil' | 'seguranca' | 'notificacoes' | 'sistema' | 'usuarios'>('perfil')
   const { user } = useAuthStore()
   const canManageUsers = user?.systemRole === 'ROOT' || user?.systemRole === 'ADMINISTRADOR'
-  const { getForUser, setVoiceOnNewOrder, loadFromBackend, saveToBackend } = useSettingsStore()
+  const {
+    getGlobal,
+    setGlobalVoiceOnNewOrder,
+    loadGlobalFromBackend,
+    saveGlobalToBackend
+  } = useSettingsStore()
 
-  // Carregar preferências do backend quando ROOT acessar a página
+  // Carregar preferência global ao abrir a página (qualquer usuário)
   React.useEffect(() => {
-    if (user?.systemRole === 'ROOT' && user.id) {
-      loadFromBackend(user.id)
-    }
-  }, [user?.systemRole, user?.id, loadFromBackend])
+    loadGlobalFromBackend()
+  }, [loadGlobalFromBackend])
 
   const perfilForm = useForm<PerfilForm>({
     resolver: zodResolver(perfilSchema),
@@ -151,11 +154,11 @@ export const Configuracoes: React.FC = () => {
                   <input
                     type="checkbox"
                     className="sr-only peer"
-                    checked={getForUser(user.id).voiceOnNewOrder}
+                    checked={getGlobal().voiceOnNewOrder}
                     onChange={(e) => {
                       const enabled = e.target.checked
-                      setVoiceOnNewOrder(user.id, enabled)
-                      saveToBackend(user.id)
+                      setGlobalVoiceOnNewOrder(enabled)
+                      saveGlobalToBackend()
                       addNotification({
                         type: 'success',
                         title: enabled ? 'Voz habilitada' : 'Voz desabilitada',
@@ -316,11 +319,11 @@ export const Configuracoes: React.FC = () => {
                       <input
                         type="checkbox"
                         className="sr-only peer"
-                        checked={getForUser(user.id).voiceOnNewOrder}
+                        checked={getGlobal().voiceOnNewOrder}
                         onChange={(e) => {
                           const enabled = e.target.checked
-                          setVoiceOnNewOrder(user.id, enabled)
-                          saveToBackend(user.id)
+                          setGlobalVoiceOnNewOrder(enabled)
+                          saveGlobalToBackend()
                           addNotification({
                             type: 'success',
                             title: enabled ? 'Voz habilitada' : 'Voz desabilitada',

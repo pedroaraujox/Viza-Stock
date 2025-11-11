@@ -33,7 +33,7 @@ export const OrdemProducaoModal: React.FC<OrdemProducaoModalProps> = ({
   const [showInsufficientAlert, setShowInsufficientAlert] = React.useState(false)
   const [checking, setChecking] = React.useState(false)
   const { user } = useAuthStore()
-  const { getForUser } = useSettingsStore()
+  const { getGlobal, loadGlobalFromBackend } = useSettingsStore()
 
   const {
     register,
@@ -59,6 +59,11 @@ export const OrdemProducaoModal: React.FC<OrdemProducaoModalProps> = ({
       fetchFichasTecnicas()
     }
   }, [fetchFichasTecnicas, fichasTecnicas])
+
+  // Carregar preferência GLOBAL ao montar o modal
+  useEffect(() => {
+    loadGlobalFromBackend()
+  }, [loadGlobalFromBackend])
 
   const fichaSelecionada = fichasTecnicas.find(f => f.id === watchedFichaTecnicaId)
 
@@ -106,8 +111,9 @@ export const OrdemProducaoModal: React.FC<OrdemProducaoModalProps> = ({
         title: 'Ordem criada como Pendente',
         message: `A ordem de produção foi criada e está em Pendentes. Ao dar Start, ela irá para Em andamento.`
       })
-      // Aviso por voz apenas se usuário ROOT tiver a preferência habilitada
-      if (user?.systemRole === 'ROOT' && getForUser(user.id).voiceOnNewOrder) {
+      // Aviso por voz baseado em preferência GLOBAL: todos os usuários escutam quando habilitado
+      const global = getGlobal()
+      if (global.voiceOnNewOrder) {
         speak('Você tem novas ordens de produção')
       }
       

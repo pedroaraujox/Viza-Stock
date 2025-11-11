@@ -36,7 +36,7 @@ export const Producao: React.FC = () => {
   } = useProducaoStore()
   const { produtos, fetchProdutos } = useProdutoStore()
   const { user } = useAuthStore()
-  const { getForUser } = useSettingsStore()
+  const { getGlobal, loadGlobalFromBackend } = useSettingsStore()
   // Removido uso de notificações não utilizado para evitar avisos de lint
   
   const [searchTerm, setSearchTerm] = useState('')
@@ -61,6 +61,11 @@ export const Producao: React.FC = () => {
     ]).finally(() => setLoadingPagina(false))
     // Dependemos apenas das funções (estáveis no zustand)
   }, [fetchFichasTecnicas, fetchProdutos, fetchOrdensProducao])
+
+  // Carregar preferência GLOBAL ao montar a tela
+  useEffect(() => {
+    loadGlobalFromBackend()
+  }, [loadGlobalFromBackend])
 
   // Filtrar ordens de produção
   const ordensFiltradas = ordensProducao.filter(ordem => {
@@ -94,7 +99,8 @@ export const Producao: React.FC = () => {
         await alterarStatusOrdem(ordemId, novoStatus)
         // Aviso por voz quando uma ordem é movida para Pendentes
         if (novoStatus === 'PENDENTE') {
-          if (user?.systemRole === 'ROOT' && getForUser(user.id).voiceOnNewOrder) {
+          const global = getGlobal()
+          if (global.voiceOnNewOrder) {
             speak('Você tem novas ordens de produção')
           }
         }

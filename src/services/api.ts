@@ -324,6 +324,36 @@ export const preferencesService = {
   }
 }
 
+// Serviço de preferências globais do sistema
+export const systemPreferencesService = {
+  get: async (): Promise<{ voiceOnNewOrder: boolean }> => {
+    try {
+      const response = await api.get('/system-preferences')
+      return response.data as { voiceOnNewOrder: boolean }
+    } catch (error) {
+      if (shouldUseMocks()) {
+        // fallback: usa mock em memória, chave especial GLOBAL
+        if (!('GLOBAL' in mockUserPreferences)) {
+          mockUserPreferences['GLOBAL'] = { voiceOnNewOrder: true }
+        }
+        return mockUserPreferences['GLOBAL']
+      }
+      throw error
+    }
+  },
+  update: async (prefs: { voiceOnNewOrder: boolean }): Promise<void> => {
+    try {
+      await api.put('/system-preferences', prefs)
+    } catch (error) {
+      if (shouldUseMocks()) {
+        mockUserPreferences['GLOBAL'] = { ...prefs }
+        return
+      }
+      throw error
+    }
+  }
+}
+
 // Serviços de Produção
 export const producaoService = {
   // Criar produto acabado com ficha técnica
