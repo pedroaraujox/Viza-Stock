@@ -115,7 +115,9 @@ const mockProdutos: Produto[] = [
     desc: 'Produto acabado pronto para venda',
     tipo: 'PRODUTO_ACABADO',
     unidadeMedida: 'UN',
-    quantidadeEmEstoque: 200
+    quantidadeEmEstoque: 200,
+    estoqueMinimo: 150,
+    estoqueRecomendado: 300
   }
 ]
 
@@ -302,7 +304,9 @@ export const producaoService = {
             desc: produto.desc || '',
             tipo: 'PRODUTO_ACABADO',
             unidadeMedida: produto.unidadeMedida,
-            quantidadeEmEstoque: 0
+            quantidadeEmEstoque: 0,
+            estoqueMinimo: produto.estoqueMinimo,
+            estoqueRecomendado: produto.estoqueRecomendado
           }
           mockProdutos.push(produtoAcabado)
         } else {
@@ -310,6 +314,13 @@ export const producaoService = {
           produtoAcabado.nome = produto.nome
           produtoAcabado.desc = produto.desc || ''
           produtoAcabado.unidadeMedida = produto.unidadeMedida
+          // Atualizar limites quando informados
+          if (typeof produto.estoqueMinimo !== 'undefined') {
+            produtoAcabado.estoqueMinimo = produto.estoqueMinimo
+          }
+          if (typeof produto.estoqueRecomendado !== 'undefined') {
+            produtoAcabado.estoqueRecomendado = produto.estoqueRecomendado
+          }
         }
 
         // Montar componentes da ficha técnica a partir dos IDs

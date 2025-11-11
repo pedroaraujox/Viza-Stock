@@ -43,6 +43,9 @@ public class ProducaoService {
             criarDTO.setDesc(dto.getDesc());
             criarDTO.setTipo(TipoProduto.PRODUTO_ACABADO);
             criarDTO.setUnidadeMedida(dto.getUnidadeMedida());
+            // Campos opcionais de controle de estoque
+            criarDTO.setEstoqueMinimo(dto.getEstoqueMinimo());
+            criarDTO.setEstoqueRecomendado(dto.getEstoqueRecomendado());
             produtoAcabado = estoqueService.criarProduto(criarDTO);
         } else {
             // Com ID: usar existente ou criar com ID informado (aceitamos ID alfanumérico)
@@ -62,11 +65,26 @@ public class ProducaoService {
                                 TipoProduto.PRODUTO_ACABADO,
                                 dto.getUnidadeMedida()
                         );
+                        // Persistir valores opcionais de estoque
+                        novo.setEstoqueMinimo(dto.getEstoqueMinimo());
+                        novo.setEstoqueRecomendado(dto.getEstoqueRecomendado());
                         return produtoRepository.save(novo);
                     });
         }
 
         // Garantir que o produto está persistido e gerenciado pelo EntityManager
+        // Atualizar estoque mínimo/recomendado se fornecido em edição
+        if (dto.getEstoqueMinimo() != null) {
+            produtoAcabado.setEstoqueMinimo(dto.getEstoqueMinimo());
+        }
+        if (dto.getEstoqueRecomendado() != null) {
+            produtoAcabado.setEstoqueRecomendado(dto.getEstoqueRecomendado());
+        }
+        // Validação simples: recomendado >= mínimo, quando ambos estiverem presentes
+        if (produtoAcabado.getEstoqueMinimo() != null && produtoAcabado.getEstoqueRecomendado() != null
+                && produtoAcabado.getEstoqueRecomendado() < produtoAcabado.getEstoqueMinimo()) {
+            throw new IllegalArgumentException("O estoque recomendado deve ser maior ou igual ao estoque mínimo.");
+        }
         produtoAcabado = produtoRepository.save(produtoAcabado);
 
         // Buscar ficha técnica existente ou criar nova

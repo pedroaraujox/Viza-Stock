@@ -9,6 +9,10 @@ public class ProdutoAcabadoRequestDTO {
     private String desc;
     private String unidadeMedida;
 
+    // Novos campos (opcionais) para controle de produção/estoque
+    private Double estoqueMinimo;
+    private Double estoqueRecomendado;
+
 
     private List<ComponenteDTO> componentes;
 
@@ -38,6 +42,18 @@ public class ProdutoAcabadoRequestDTO {
     }
     public void setUnidadeMedida(String unidadeMedida) {
         this.unidadeMedida = unidadeMedida;
+    }
+    public Double getEstoqueMinimo() {
+        return estoqueMinimo;
+    }
+    public void setEstoqueMinimo(Double estoqueMinimo) {
+        this.estoqueMinimo = estoqueMinimo;
+    }
+    public Double getEstoqueRecomendado() {
+        return estoqueRecomendado;
+    }
+    public void setEstoqueRecomendado(Double estoqueRecomendado) {
+        this.estoqueRecomendado = estoqueRecomendado;
     }
     public List<ComponenteDTO> getComponentes() {
         return componentes;

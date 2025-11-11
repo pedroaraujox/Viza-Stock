@@ -22,6 +22,12 @@ public class Produto {
     @Column(name = "quant_em_estoque")
     private double quantidadeEmEstoque;
 
+    @Column(name = "estoque_minimo")
+    private Double estoqueMinimo; // pode ser nulo quando não configurado
+
+    @Column(name = "estoque_recomendado")
+    private Double estoqueRecomendado; // pode ser nulo quando não configurado
+
     public Produto() {
     }
 
@@ -35,6 +41,8 @@ public class Produto {
         this.tipo = tipo;
         this.unidadeMedida = unidadeMedida;
         this.quantidadeEmEstoque = 0.0;
+        this.estoqueMinimo = null;
+        this.estoqueRecomendado = null;
     }
 
     public void darEntrada(double quantidade) {
@@ -92,5 +100,21 @@ public class Produto {
 
     public double getQuantidadeEmEstoque() {
         return quantidadeEmEstoque;
+    }
+
+    public Double getEstoqueMinimo() {
+        return estoqueMinimo;
+    }
+
+    public void setEstoqueMinimo(Double estoqueMinimo) {
+        this.estoqueMinimo = estoqueMinimo;
+    }
+
+    public Double getEstoqueRecomendado() {
+        return estoqueRecomendado;
+    }
+
+    public void setEstoqueRecomendado(Double estoqueRecomendado) {
+        this.estoqueRecomendado = estoqueRecomendado;
     }
 }

@@ -56,6 +56,15 @@ public class EstoqueService {
                 dto.getTipo(),
                 dto.getUnidadeMedida()
         );
+        // Se for produto acabado, permitir configurar estoque mínimo/recomendado
+        if (dto.getTipo() == TipoProduto.PRODUTO_ACABADO) {
+            novoProduto.setEstoqueMinimo(dto.getEstoqueMinimo());
+            novoProduto.setEstoqueRecomendado(dto.getEstoqueRecomendado());
+            if (novoProduto.getEstoqueMinimo() != null && novoProduto.getEstoqueRecomendado() != null
+                    && novoProduto.getEstoqueRecomendado() < novoProduto.getEstoqueMinimo()) {
+                throw new IllegalArgumentException("O estoque recomendado deve ser maior ou igual ao estoque mínimo.");
+            }
+        }
         return produtoRepository.save(novoProduto);
     }
 
@@ -132,6 +141,20 @@ public class EstoqueService {
         // Atualização de tipo é opcional; habilitada aqui, mas pode ser restringida conforme regras de negócio
         if (dto.getTipo() != null) {
             existente.setTipo(dto.getTipo());
+        }
+
+        // Atualizar estoque mínimo/recomendado apenas para produto acabado
+        if (existente.getTipo() == TipoProduto.PRODUTO_ACABADO) {
+            if (dto.getEstoqueMinimo() != null) {
+                existente.setEstoqueMinimo(dto.getEstoqueMinimo());
+            }
+            if (dto.getEstoqueRecomendado() != null) {
+                existente.setEstoqueRecomendado(dto.getEstoqueRecomendado());
+            }
+            if (existente.getEstoqueMinimo() != null && existente.getEstoqueRecomendado() != null
+                    && existente.getEstoqueRecomendado() < existente.getEstoqueMinimo()) {
+                throw new IllegalArgumentException("O estoque recomendado deve ser maior ou igual ao estoque mínimo.");
+            }
         }
 
         return produtoRepository.save(existente);

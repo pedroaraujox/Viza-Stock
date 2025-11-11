@@ -34,6 +34,9 @@ export const Estoque: React.FC = () => {
   const [cadastroNome, setCadastroNome] = useState('')
   const [cadastroUnidade, setCadastroUnidade] = useState('UN')
   const [cadastroDesc, setCadastroDesc] = useState('')
+  // Campos de estoque para Produto acabado
+  const [cadastroEstoqueMinimo, setCadastroEstoqueMinimo] = useState<string>('')
+  const [cadastroEstoqueRecomendado, setCadastroEstoqueRecomendado] = useState<string>('')
   const [cadastroLoading, setCadastroLoading] = useState(false)
   const [cadastroErro, setCadastroErro] = useState<string | null>(null)
   // Estado para modal de movimentação de estoque (Entrada/Saída)
@@ -166,12 +169,31 @@ export const Estoque: React.FC = () => {
                       unidadeMedida: cadastroUnidade
                     })
                   } else {
+                    // Validações específicas para Produto acabado
+                    const minimo = cadastroEstoqueMinimo !== '' ? Number(cadastroEstoqueMinimo) : undefined
+                    const recomendado = cadastroEstoqueRecomendado !== '' ? Number(cadastroEstoqueRecomendado) : undefined
+
+                    if (minimo === undefined || recomendado === undefined) {
+                      throw new Error('Informe o Estoque mínimo e o Estoque recomendado para o Produto acabado.')
+                    }
+                    if (Number.isNaN(minimo) || Number.isNaN(recomendado)) {
+                      throw new Error('Valores de estoque inválidos. Utilize apenas números.')
+                    }
+                    if (minimo < 0 || recomendado < 0) {
+                      throw new Error('Os valores de estoque não podem ser negativos.')
+                    }
+                    if (recomendado < minimo) {
+                      throw new Error('O Estoque recomendado deve ser maior ou igual ao Estoque mínimo.')
+                    }
+
                     await producaoService.criarProdutoAcabado({
                       id: undefined,
                       nome: cadastroNome,
                       desc: cadastroDesc || undefined,
                       unidadeMedida: 'UN',
-                      componentes: []
+                      componentes: [],
+                      estoqueMinimo: minimo,
+                      estoqueRecomendado: recomendado
                     })
                     // Recarregar lista de produtos
                     await fetchProdutos()
@@ -181,6 +203,8 @@ export const Estoque: React.FC = () => {
                   setCadastroNome('')
                   setCadastroUnidade('UN')
                   setCadastroDesc('')
+                  setCadastroEstoqueMinimo('')
+                  setCadastroEstoqueRecomendado('')
                 } catch (error) {
                   const message = error instanceof Error ? error.message : 'Erro ao salvar'
                   setCadastroErro(message)
@@ -203,6 +227,36 @@ export const Estoque: React.FC = () => {
                     >
                       <option value="PRODUTO_ACABADO">Produto acabado</option>
                     </select>
+                  </div>
+
+                  {/* Estoque mínimo e recomendado */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estoque mínimo</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={cadastroEstoqueMinimo}
+                        onChange={(e) => setCadastroEstoqueMinimo(e.target.value)}
+                        placeholder="Ex: 50"
+                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Quantidade mínima desejada em estoque.</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estoque recomendado</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={cadastroEstoqueRecomendado}
+                        onChange={(e) => setCadastroEstoqueRecomendado(e.target.value)}
+                        placeholder="Ex: 200"
+                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Quantidade alvo recomendada para manter em estoque.</p>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -479,6 +533,29 @@ export const Estoque: React.FC = () => {
                     <p className="text-lg font-semibold text-gray-900 dark:text-white">
                       {p.quantidadeEmEstoque} {p.unidadeMedida}
                     </p>
+                    {/* Alertas baseados em limites configurados no produto */}
+                    {p.tipo === 'PRODUTO_ACABADO' && (
+                      <div className="mt-2 space-y-2">
+                        {/* Abaixo ou no mínimo */}
+                        {typeof p.estoqueMinimo !== 'undefined' && (p.quantidadeEmEstoque ?? 0) <= (p.estoqueMinimo ?? 0) && (
+                          <div className="flex items-start gap-2 rounded-md border border-yellow-300 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-2">
+                            <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
+                            <p className="text-xs sm:text-sm text-yellow-800 dark:text-yellow-200">
+                              O seu estoque está abaixo do mínimo, produza mais para estar dentro dos conformes.
+                            </p>
+                          </div>
+                        )}
+                        {/* Acima do recomendado */}
+                        {typeof p.estoqueRecomendado !== 'undefined' && (p.quantidadeEmEstoque ?? 0) > (p.estoqueRecomendado ?? Infinity) && (
+                          <div className="flex items-start gap-2 rounded-md border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-2">
+                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
+                            <p className="text-xs sm:text-sm text-red-800 dark:text-red-200">
+                              O nível do seu estoque em {p.nome} está acima do recomendado; produzir mais do que isso pode gerar perda financeira.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   {/* Ações: Editar (Entrada/Saída) e Excluir */}
                   {podeEditarExcluir ? (

@@ -6,6 +6,9 @@ export interface Produto {
   tipo: 'MATERIA_PRIMA' | 'PRODUTO_ACABADO'
   unidadeMedida: string
   quantidadeEmEstoque: number
+  // Limites opcionais para controle de alertas de estoque
+  estoqueMinimo?: number
+  estoqueRecomendado?: number
 }
 
 export interface FichaTecnica {
@@ -41,6 +44,10 @@ export interface ProdutoAcabadoRequestDTO {
   desc?: string
   unidadeMedida: string
   componentes: ComponenteDTO[]
+  // Campos adicionais para controle de estoque
+  // Opcionalmente informados no cadastro de Produto Acabado
+  estoqueMinimo?: number
+  estoqueRecomendado?: number
 }
 
 export interface ComponenteDTO {

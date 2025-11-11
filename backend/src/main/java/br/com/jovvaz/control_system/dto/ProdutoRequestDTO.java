@@ -9,6 +9,10 @@ public class ProdutoRequestDTO {
     private TipoProduto tipo;
     private String unidadeMedida;
 
+    // Campos opcionais para Produto Acabado
+    private Double estoqueMinimo;
+    private Double estoqueRecomendado;
+
 
     private String id;
 
@@ -52,6 +56,22 @@ public class ProdutoRequestDTO {
 
     public String getId() {
         return id;
+    }
+
+    public Double getEstoqueMinimo() {
+        return estoqueMinimo;
+    }
+
+    public void setEstoqueMinimo(Double estoqueMinimo) {
+        this.estoqueMinimo = estoqueMinimo;
+    }
+
+    public Double getEstoqueRecomendado() {
+        return estoqueRecomendado;
+    }
+
+    public void setEstoqueRecomendado(Double estoqueRecomendado) {
+        this.estoqueRecomendado = estoqueRecomendado;
     }
 
 
