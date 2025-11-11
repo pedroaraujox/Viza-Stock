@@ -20,6 +20,8 @@ import { ProdutoAcabadoModal } from './ProdutoAcabadoModal'
 import { KanbanBoard } from '../../components/Kanban'
 import { EditOrdemModal } from './EditOrdemModal'
 import { speak } from '../../utils/voice'
+import { useAuthStore } from '../../stores/authStore'
+import { useSettingsStore } from '../../stores/settingsStore'
 
 export const Producao: React.FC = () => {
   const { 
@@ -33,6 +35,8 @@ export const Producao: React.FC = () => {
     // executarOrdem
   } = useProducaoStore()
   const { produtos, fetchProdutos } = useProdutoStore()
+  const { user } = useAuthStore()
+  const { getForUser } = useSettingsStore()
   // Removido uso de notificações não utilizado para evitar avisos de lint
   
   const [searchTerm, setSearchTerm] = useState('')
@@ -90,7 +94,9 @@ export const Producao: React.FC = () => {
         await alterarStatusOrdem(ordemId, novoStatus)
         // Aviso por voz quando uma ordem é movida para Pendentes
         if (novoStatus === 'PENDENTE') {
-          speak('Você tem novas ordens de produção')
+          if (user?.systemRole === 'ROOT' && getForUser(user.id).voiceOnNewOrder) {
+            speak('Você tem novas ordens de produção')
+          }
         }
       }
     

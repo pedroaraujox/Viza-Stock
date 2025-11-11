@@ -8,6 +8,8 @@ import { useNotifications } from '../../stores/uiStore'
 import { cn } from '../../lib/utils'
 import { FullScreenAlert } from '../../components/FullScreenAlert'
 import { speak } from '../../utils/voice'
+import { useAuthStore } from '../../stores/authStore'
+import { useSettingsStore } from '../../stores/settingsStore'
 
 const ordemProducaoSchema = z.object({
   fichaTecnicaId: z.string().min(1, 'Selecione uma ficha técnica'),
@@ -30,6 +32,8 @@ export const OrdemProducaoModal: React.FC<OrdemProducaoModalProps> = ({
   const { addNotification } = useNotifications()
   const [showInsufficientAlert, setShowInsufficientAlert] = React.useState(false)
   const [checking, setChecking] = React.useState(false)
+  const { user } = useAuthStore()
+  const { getForUser } = useSettingsStore()
 
   const {
     register,
@@ -102,8 +106,10 @@ export const OrdemProducaoModal: React.FC<OrdemProducaoModalProps> = ({
         title: 'Ordem criada como Pendente',
         message: `A ordem de produção foi criada e está em Pendentes. Ao dar Start, ela irá para Em andamento.`
       })
-      // Aviso por voz ao criar nova ordem em Pendentes
-      speak('Você tem novas ordens de produção')
+      // Aviso por voz apenas se usuário ROOT tiver a preferência habilitada
+      if (user?.systemRole === 'ROOT' && getForUser(user.id).voiceOnNewOrder) {
+        speak('Você tem novas ordens de produção')
+      }
       
       onSuccess()
     } catch {

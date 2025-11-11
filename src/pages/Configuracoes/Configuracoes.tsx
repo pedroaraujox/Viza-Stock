@@ -21,6 +21,7 @@ import { useNotifications } from '../../stores/uiStore'
 import { cn } from '../../lib/utils'
 import { useAuthStore } from '../../stores/authStore'
 import { GerenciarUsuarios } from './GerenciarUsuarios'
+import { useSettingsStore } from '../../stores/settingsStore'
 
 const perfilSchema = z.object({
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -39,6 +40,14 @@ export const Configuracoes: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'perfil' | 'seguranca' | 'notificacoes' | 'sistema' | 'usuarios'>('perfil')
   const { user } = useAuthStore()
   const canManageUsers = user?.systemRole === 'ROOT' || user?.systemRole === 'ADMINISTRADOR'
+  const { getForUser, setVoiceOnNewOrder, loadFromBackend, saveToBackend } = useSettingsStore()
+
+  // Carregar preferências do backend quando ROOT acessar a página
+  React.useEffect(() => {
+    if (user?.systemRole === 'ROOT' && user.id) {
+      loadFromBackend(user.id)
+    }
+  }, [user?.systemRole, user?.id, loadFromBackend])
 
   const perfilForm = useForm<PerfilForm>({
     resolver: zodResolver(perfilSchema),
@@ -130,6 +139,36 @@ export const Configuracoes: React.FC = () => {
                 </button>
               )
             })}
+
+            {/* Toggle de Voz dentro do nav (visível somente para ROOT) */}
+            {user?.systemRole === 'ROOT' && (
+              <div className="mt-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 flex items-center justify-between">
+                <div className="min-w-0 mr-3">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">Voz para novas ordens</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 truncate">Somente ROOT</p>
+                </div>
+                <label className="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={getForUser(user.id).voiceOnNewOrder}
+                    onChange={(e) => {
+                      const enabled = e.target.checked
+                      setVoiceOnNewOrder(user.id, enabled)
+                      saveToBackend(user.id)
+                      addNotification({
+                        type: 'success',
+                        title: enabled ? 'Voz habilitada' : 'Voz desabilitada',
+                        message: 'Preferência atualizada com sucesso.'
+                      })
+                    }}
+                  />
+                  <span className="w-9 h-5 bg-gray-200 peer-checked:bg-blue-600 rounded-full peer transition-colors relative">
+                    <span className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></span>
+                  </span>
+                </label>
+              </div>
+            )}
           </nav>
         </div>
 
@@ -251,6 +290,63 @@ export const Configuracoes: React.FC = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {activeTab === 'sistema' && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+              <div className="flex items-center space-x-3">
+                <Settings className="w-6 h-6 text-blue-600" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Configurações do Sistema</h2>
+              </div>
+
+              {/* Preferência de voz: somente ROOT */}
+              {user?.systemRole === 'ROOT' && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Recursos de Voz</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Controle de anúncio por voz quando novas ordens de produção são criadas.</p>
+
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Voz para novas ordens</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Quando habilitado, o sistema anunciará por voz a criação de novas ordens (apenas para ROOT).</p>
+                    </div>
+                    {/* Toggle */}
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={getForUser(user.id).voiceOnNewOrder}
+                        onChange={(e) => {
+                          const enabled = e.target.checked
+                          setVoiceOnNewOrder(user.id, enabled)
+                          saveToBackend(user.id)
+                          addNotification({
+                            type: 'success',
+                            title: enabled ? 'Voz habilitada' : 'Voz desabilitada',
+                            message: 'Preferência atualizada com sucesso.'
+                          })
+                        }}
+                      />
+                      <span className="w-11 h-6 bg-gray-200 peer-checked:bg-blue-600 rounded-full peer transition-colors relative">
+                        <span className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Outras configurações do sistema existentes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
+                  <p className="font-medium text-gray-900 dark:text-white">Backup Automático</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Mantém cópias de segurança do banco periodicamente.</p>
+                </div>
+                <div className="p-4 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
+                  <p className="font-medium text-gray-900 dark:text-white">Logs Detalhados</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Habilita logs mais verbosos para depuração.</p>
+                </div>
+              </div>
             </div>
           )}
 

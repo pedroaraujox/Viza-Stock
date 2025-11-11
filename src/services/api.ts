@@ -127,6 +127,8 @@ const mockProdutos: Produto[] = [
 const mockFichasTecnicas: FichaTecnica[] = []
 // Mock para ordens de produção persistidas quando API não estiver disponível
 const mockOrdensProducao: OrdemProducao[] = []
+// Mock de preferências de usuário quando API não estiver disponível
+const mockUserPreferences: Record<string, { voiceOnNewOrder: boolean }> = {}
 
 // Serviços de Produtos
 export const produtosService = {
@@ -284,6 +286,40 @@ export const produtosService = {
         return produto
       }
       throw new Error(getApiErrorMessage(error))
+    }
+  }
+}
+
+// Serviço de preferências de usuário (apenas configurações relacionadas ao frontend)
+export const preferencesService = {
+  // Buscar preferências de um usuário
+  get: async (userId: string): Promise<{ voiceOnNewOrder: boolean }> => {
+    try {
+      const response = await api.get(`/user-preferences/${encodeURIComponent(userId)}`)
+      // Espera forma { voiceOnNewOrder: boolean }
+      return response.data as { voiceOnNewOrder: boolean }
+    } catch (error) {
+      if (shouldUseMocks()) {
+        // fallback: usa mock em memória
+        if (!(userId in mockUserPreferences)) {
+          mockUserPreferences[userId] = { voiceOnNewOrder: true }
+        }
+        return mockUserPreferences[userId]
+      }
+      throw error
+    }
+  },
+
+  // Atualizar preferências de um usuário
+  update: async (userId: string, prefs: { voiceOnNewOrder: boolean }): Promise<void> => {
+    try {
+      await api.put(`/user-preferences/${encodeURIComponent(userId)}`, prefs)
+    } catch (error) {
+      if (shouldUseMocks()) {
+        mockUserPreferences[userId] = { ...prefs }
+        return
+      }
+      throw error
     }
   }
 }
