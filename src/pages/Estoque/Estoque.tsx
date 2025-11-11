@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useProdutoStore, useProdutosEstoqueBaixo } from '../../stores/produtoStore'
 import { relatoriosService, producaoService } from '../../services/api'
+import { useProducaoStore } from '../../stores/producaoStore'
 import type { MovimentacaoEstoque, Produto } from '../../types'
 import { cn } from '../../lib/utils'
 import { useNotifications } from '../../stores/uiStore'
@@ -21,6 +22,7 @@ import { usePermissions } from '../../stores/authStore'
 
 export const Estoque: React.FC = () => {
   const { produtos, fetchProdutos, deletarProduto } = useProdutoStore()
+  const { fetchFichasTecnicas } = useProducaoStore()
   const limiteEstoqueBaixo = 10
   const produtosEstoqueBaixo = useProdutosEstoqueBaixo(limiteEstoqueBaixo)
   const [movimentacoes, setMovimentacoes] = useState<MovimentacaoEstoque[]>([])
@@ -197,6 +199,8 @@ export const Estoque: React.FC = () => {
                     })
                     // Recarregar lista de produtos
                     await fetchProdutos()
+                    // Recarregar fichas técnicas para que o template apareça imediatamente na página de Fichas
+                    await fetchFichasTecnicas()
                   }
                   setCadastroAberto(false)
                   setCadastroId('')

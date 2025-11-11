@@ -18,10 +18,13 @@ export interface TemplateFichaTecnica {
 interface TemplatesModalProps {
   onClose: () => void
   onUseTemplate?: (template: TemplateFichaTecnica) => void
+  // Lista de templates dinâmica enviada pela página. Se vazia/undefined, usa os templates padrão abaixo.
+  templates?: TemplateFichaTecnica[]
 }
 
 // Templates estáticos de exemplo
-export const templates: TemplateFichaTecnica[] = [
+// Templates estáticos de exemplo (fallback)
+export const defaultTemplates: TemplateFichaTecnica[] = [
   {
     id: 'tpl-01',
     nomeProduto: 'Bolo de Milho',
@@ -71,7 +74,8 @@ export const templates: TemplateFichaTecnica[] = [
   }
 ]
 
-export const TemplatesModal: React.FC<TemplatesModalProps> = ({ onClose, onUseTemplate }) => {
+export const TemplatesModal: React.FC<TemplatesModalProps> = ({ onClose, onUseTemplate, templates }) => {
+  const list = (templates && templates.length > 0) ? templates : defaultTemplates
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden">
@@ -92,7 +96,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({ onClose, onUseTe
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[70vh]">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates.map((tpl) => (
+            {list.map((tpl) => (
               <div key={tpl.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{tpl.nomeProduto}</h3>

@@ -40,6 +40,16 @@ export const FichasTecnicas: React.FC = () => {
   // Filtrar fichas técnicas
   const term = searchTerm.trim().toLowerCase()
   const fichasArray: FichaTecnica[] = Array.isArray(fichasTecnicas) ? fichasTecnicas : []
+  // Templates dinâmicos: fichas com componentes vazios (criadas junto com o Produto Acabado)
+  const dynamicTemplates: TemplateFichaTecnica[] = fichasArray
+    .filter(f => (f.componentes?.length ?? 0) === 0 && !!f.produtoAcabado)
+    .map(f => ({
+      id: `tpl-ft-${f.produtoAcabado!.id}`,
+      nomeProduto: f.produtoAcabado!.nome,
+      unidadeProduto: f.produtoAcabado!.unidadeMedida,
+      descricao: f.produtoAcabado!.desc || '',
+      componentes: []
+    }))
   const fichasFiltradas = term
     ? fichasArray.filter(ficha => {
         const produtoNome = ficha?.produtoAcabado?.nome?.toLowerCase() || ''
@@ -328,6 +338,7 @@ export const FichasTecnicas: React.FC = () => {
       {templatesOpen && (
         <TemplatesModal
           onClose={() => setTemplatesOpen(false)}
+          templates={dynamicTemplates}
           onUseTemplate={(tpl) => {
             // Fecha o modal de templates e abre o de criação com dados do template
             setTemplatesOpen(false)
